@@ -57,8 +57,10 @@ export default function AdminInvitados() {
   };
 
   const enviarWhatsApp = (invitado: any) => {
-    const urlInvitacion = `http://localhost:3000/invitacion/${invitado.id}`;
-    const mensaje = `¡Hola ${invitado.nombre}! Me encantaría que me acompañaras. Abre tu invitación y confirma tu asistencia aquí: ${urlInvitacion}`;
+    // Obtiene el dominio de Vercel automáticamente
+    const baseUrl = window.location.origin; 
+    const linkInvitacion = `${baseUrl}/invitacion/${invitado.id}`;
+    const mensaje = `¡Hola ${invitado.nombre}! Me encantaría que me acompañaras. Abre tu invitación y confirma tu asistencia aquí: ${linkInvitacion}`;
     const link = `https://wa.me/${invitado.telefono}?text=${encodeURIComponent(mensaje)}`;
     window.open(link, '_blank');
   };
