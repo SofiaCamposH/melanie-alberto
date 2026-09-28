@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export default function InvitacionZelda() {
   const params = useParams();
