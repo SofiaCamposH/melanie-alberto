@@ -216,39 +216,41 @@ export default function InvitacionZelda() {
           <div className="absolute bottom-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute bottom-[16px] right-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-r-[6px] border-[#c5a059] pointer-events-none z-0"></div>
 
-          {/* PORTADA INICIAL */}
-          <div className="w-full min-h-[90svh] flex flex-col items-center justify-center p-6 relative z-10">
+          {/* PORTADA INICIAL (Espacio ajustado para que no quede hueco hacia abajo) */}
+          <div className="w-full flex flex-col items-center justify-center pt-8 pb-3 px-6 relative z-10">
             <img 
               src="/inicio.png" 
               alt="Vitral Zelda y Link" 
-              className="w-[90%] sm:w-[80%] max-w-[400px] h-auto drop-shadow-2xl"
+              className="w-[90%] sm:w-[80%] max-w-[380px] h-auto drop-shadow-2xl"
             />
           </div>
 
-          {/* ÁREA DE CONTENIDO */}
-          <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-12 p-8 pt-4">
+          {/* ÁREA DE CONTENIDO (Espaciado compacto) */}
+          <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-7 px-6 pt-0">
             
-            {/* ================= 1. NOMBRES E INTRO (Melanie & arriba, Alberto abajo) ================= */}
-            <div className="flex flex-col items-center w-full text-center">
+            {/* ================= 1. NOMBRES E INTRO (Color original, mucho más grande y sin huecos) ================= */}
+            <div className="flex flex-col items-center w-full text-center mt-1">
               <h1 
-                className="text-5xl sm:text-6xl md:text-7xl font-normal tracking-wider leading-none text-[#1f4027] drop-shadow-sm flex flex-col items-center" 
+                className="text-6xl sm:text-7xl md:text-8xl font-normal tracking-wide leading-[0.9] text-[#4A3B2C] flex flex-col items-center" 
                 style={{ fontFamily: "'Zelda', sans-serif" }}
               >
-                <span>Melanie &</span>
-                <span className="mt-2">Alberto</span>
+                <span>
+                  Melanie <span className="text-[#8C6D46]">&</span>
+                </span>
+                <span className="mt-1">Alberto</span>
               </h1>
             </div>
 
-            <div className="text-center bg-[#f4e8c1]/60 p-4 rounded-xl backdrop-blur-sm w-full max-w-sm mt-4">
-              <p className="text-lg mb-2 font-semibold">Estás cordialmente invitado a celebrar nuestra boda</p>
-              <p className="text-lg font-bold text-[#8C6D46]">"It's dangerous to go alone! Will you join us?"</p>
+            <div className="text-center bg-[#f4e8c1]/60 p-3.5 rounded-xl backdrop-blur-sm w-full max-w-sm">
+              <p className="text-base sm:text-lg mb-1 font-semibold">Estás cordialmente invitado a celebrar nuestra boda</p>
+              <p className="text-base sm:text-lg font-bold text-[#8C6D46]">"It's dangerous to go alone! Will you join us?"</p>
             </div>
 
-            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50" />
+            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
 
-            {/* ================= 2. CONTADOR ================= */}
-            <div className="flex flex-col items-center justify-center w-full">
-              <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-6 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>Solo faltan:</h2>
+            {/* ================= 2. CONTADOR (Espacio superior reducido) ================= */}
+            <div className="flex flex-col items-center justify-center w-full -mt-1">
+              <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>Solo faltan:</h2>
               
               <div className="flex justify-center gap-4 sm:gap-6 text-center w-full">
                 <div className="flex flex-col items-center">
@@ -273,9 +275,9 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 3. CARRUSEL "NOSOTROS" (Flechas limpias sin caja azul) ================= */}
-            <div className="w-full flex flex-col items-center">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
+            {/* ================= 3. CARRUSEL "NOSOTROS" ================= */}
+            <div className="w-full flex flex-col items-center pt-2">
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
               
               <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
                 <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
@@ -284,7 +286,7 @@ export default function InvitacionZelda() {
                   </div>
                 </div>
 
-                {/* Flecha izquierda */}
+                {/* Flecha izquierda limpia */}
                 <button 
                   type="button"
                   onClick={fotoAnterior} 
@@ -293,7 +295,7 @@ export default function InvitacionZelda() {
                 >
                   &#10094;
                 </button>
-                {/* Flecha derecha */}
+                {/* Flecha derecha limpia */}
                 <button 
                   type="button"
                   onClick={siguienteFoto} 
@@ -304,7 +306,7 @@ export default function InvitacionZelda() {
                 </button>
               </div>
 
-              <div className="flex gap-2 mt-8">
+              <div className="flex gap-2 mt-6">
                 {fotos.map((_, i) => (
                   <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i === fotoIndex ? 'bg-[#4A3B2C]' : 'bg-[#8C6D46]/40'}`} />
                 ))}
@@ -313,9 +315,9 @@ export default function InvitacionZelda() {
 
             {/* ================= 4. FECHA Y LUGAR ================= */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
               
-              <div className="flex flex-col gap-6 text-lg text-[#4A3B2C] mb-8">
+              <div className="flex flex-col gap-5 text-lg text-[#4A3B2C] mb-6">
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Día del Evento</span>
                   <p className="font-semibold text-xl">Viernes, 18 de Diciembre de 2026</p>
@@ -324,7 +326,7 @@ export default function InvitacionZelda() {
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Recepción</span>
                   <p className="font-semibold text-xl">18:00 hrs</p>
                 </div>
-                <div className="flex flex-col items-center justify-center mt-2">
+                <div className="flex flex-col items-center justify-center mt-1">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Lugar</span>
                   <p className="font-bold text-2xl text-[#1f4027]">Salon de eventos "Gran Jardin"</p>
                   <p className="text-base mt-1">Adolfo López Mateos 203, Trojes de San Cristóbal</p>
@@ -342,14 +344,14 @@ export default function InvitacionZelda() {
             </div>
 
             {/* ================= 5. MESA DE REGALOS ================= */}
-            <div className="w-full text-center my-4">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
+            <div className="w-full text-center my-2">
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
               
-              <p className="text-base text-[#4A3B2C] mb-6 px-4">
+              <p className="text-base text-[#4A3B2C] mb-4 px-4">
                 El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:
               </p>
 
-              <div className="flex justify-center gap-6 my-8">
+              <div className="flex justify-center gap-6 my-6">
                 <a href="https://mesaderegalos.liverpool.com.mx/milistaderegalos/60041692" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
                   <img src="/liverpool.png" alt="Liverpool" className="h-10 sm:h-12 w-auto object-contain" />
                 </a>
@@ -359,40 +361,40 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50" />
+            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
 
             {/* ================= 6. CÓDIGO DE VESTIMENTA ================= */}
-            <div className="w-full text-center my-4">
-              <h2 className="text-4xl sm:text-5xl mb-6 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Código de Vestimenta</h2>
-              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-2">Formal</p>
+            <div className="w-full text-center my-2">
+              <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Código de Vestimenta</h2>
+              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">Formal</p>
               <p className="text-[#4A3B2C] text-lg font-semibold">El blanco se reserva para la novia.</p>
               
-              <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-6 drop-shadow-md" />
+              <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
 
             {/* ================= 7. CONFIRMACIÓN DE ASISTENCIA (Con selector de boletos) ================= */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Confirmación de Asistencia
               </h2>
               
-              <p className="text-lg text-[#4A3B2C] font-semibold mb-2">Estamos emocionados de verte en nuestra boda.</p>
-              <p className="text-base text-[#4A3B2C] mb-6">Entendemos si por algún motivo no pudieras acompañarnos. Te pedimos por favor que nos confirmes tu asistencia lo antes posible.</p>
+              <p className="text-lg text-[#4A3B2C] font-semibold mb-1">Estamos emocionados de verte en nuestra boda.</p>
+              <p className="text-base text-[#4A3B2C] mb-4">Entendemos si por algún motivo no pudieras acompañarnos. Te pedimos por favor que nos confirmes tu asistencia lo antes posible.</p>
 
-              <div className="my-6 py-4 border-y-2 border-[#8C6D46]/40 bg-[#e8dcc4]/50">
+              <div className="my-4 py-3 border-y-2 border-[#8C6D46]/40 bg-[#e8dcc4]/50">
                 <p className="text-3xl sm:text-4xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                   Evento solo para adultos
                 </p>
-                <p className="text-sm text-[#4A3B2C] mt-2 font-semibold">Queremos que se relajen y disfruten de la fiesta al máximo.</p>
+                <p className="text-sm text-[#4A3B2C] mt-1 font-semibold">Queremos que se relajen y disfruten de la fiesta al máximo.</p>
               </div>
               
-              <p className="text-lg font-semibold mb-4">
+              <p className="text-lg font-semibold mb-3">
                 Hemos reservado <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? 'pase' : 'pases'} para ti, {invitado.nombre}.
               </p>
 
               {/* Selector de pases si tiene más de 1 asignado y aún no ha confirmado */}
               {invitado.estado !== 'confirmado' && invitado.estado !== 'rechazado' && totalAsignados > 1 && (
-                <div className="mb-6 flex flex-col items-center">
+                <div className="mb-5 flex flex-col items-center">
                   <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
                     ¿Cuántos pases confirmas?
                   </label>
@@ -454,8 +456,8 @@ export default function InvitacionZelda() {
 
             {/* ================= 8. CANCIONES (Formulario Simple) ================= */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
-              <h3 className="text-3xl sm:text-4xl mb-4 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Melodías para la fiesta</h3>
-              <p className="text-sm text-[#4A3B2C] mb-4 font-semibold">¿Qué canción no puede faltar?</p>
+              <h3 className="text-3xl sm:text-4xl mb-3 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Melodías para la fiesta</h3>
+              <p className="text-sm text-[#4A3B2C] mb-3 font-semibold">¿Qué canción no puede faltar?</p>
               <div className="flex flex-col gap-3 max-w-sm mx-auto">
                 <input 
                   type="text" 
@@ -475,7 +477,7 @@ export default function InvitacionZelda() {
                 <button 
                   onClick={sugerirCancion} 
                   disabled={enviandoCancion} 
-                  className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] mt-4 w-full disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] mt-3 w-full disabled:opacity-50"
                 >
                   {enviandoCancion ? 'Enviando...' : (
                     <>
