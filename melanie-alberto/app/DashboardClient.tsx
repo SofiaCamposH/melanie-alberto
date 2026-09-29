@@ -6,9 +6,10 @@ import { supabase } from '@/lib/supabase';
 interface Invitado {
   id: string;
   nombre: string;
-  boletos: number;
+  boletos?: number;
+  pases?: number;
   telefono?: string;
-  asistencia?: boolean | null;
+  estado?: string;
   pases_confirmados?: number;
   created_at?: string;
 }
@@ -43,16 +44,22 @@ export default function DashboardClient() {
     }
   };
 
+  // Normalizadores para coincidir con la base de datos
+  const getBoletos = (inv: Invitado) => Number(inv.boletos ?? inv.pases ?? 0);
+  const getEstado = (inv: Invitado) => (inv.estado || 'pendiente').toLowerCase().trim();
+
   // Métricas
   const totalInvitaciones = invitados.length;
-  const totalBoletos = invitados.reduce((acc, curr) => acc + (Number(curr.boletos) || 0), 0);
-  
-  const confirmados = invitados.filter(i => i.asistencia === true);
-  const declinados = invitados.filter(i => i.asistencia === false);
-  const pendientes = invitados.filter(i => i.asistencia === null || i.asistencia === undefined);
+  const totalBoletos = invitados.reduce((acc, curr) => acc + getBoletos(curr), 0);
+
+  const confirmados = invitados.filter((i) => getEstado(i) === 'confirmado');
+  const declinados = invitados.filter(
+    (i) => getEstado(i) === 'declinado' || getEstado(i) === 'cancelado' || getEstado(i) === 'no'
+  );
+  const pendientes = invitados.filter((i) => getEstado(i) === 'pendiente');
 
   const boletosConfirmados = confirmados.reduce(
-    (acc, curr) => acc + (Number(curr.pases_confirmados ?? curr.boletos) || 0), 
+    (acc, curr) => acc + (Number(curr.pases_confirmados ?? getBoletos(curr)) || 0),
     0
   );
 
@@ -61,9 +68,10 @@ export default function DashboardClient() {
     const coincideNombre = inv.nombre?.toLowerCase().includes(busqueda.toLowerCase());
     if (!coincideNombre) return false;
 
-    if (filtroEstado === 'confirmados') return inv.asistencia === true;
-    if (filtroEstado === 'declinados') return inv.asistencia === false;
-    if (filtroEstado === 'pendientes') return inv.asistencia === null || inv.asistencia === undefined;
+    const est = getEstado(inv);
+    if (filtroEstado === 'confirmados') return est === 'confirmado';
+    if (filtroEstado === 'declinados') return est === 'declinado' || est === 'cancelado' || est === 'no';
+    if (filtroEstado === 'pendientes') return est === 'pendiente';
 
     return true;
   });
@@ -78,17 +86,16 @@ export default function DashboardClient() {
   const enviarWhatsApp = (inv: Invitado) => {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
     const texto = `¡Hola ${inv.nombre}! Nos encantaría que nos acompañes en este día tan especial. Te compartimos tu invitación formal con todos los detalles y el pase digital para ti y tu familia: ${urlInvitacion}`;
-    
-    // Limpia el número si existe
+
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
-    const enlaceWA = telLimpio 
+    const enlaceWA = telLimpio
       ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(texto)}`
       : `https://wa.me/?text=${encodeURIComponent(texto)}`;
-      
+
     window.open(enlaceWA, '_blank');
   };
 
-  // Subida y procesamiento de CSV
+  // Cargar archivo CSV
   const procesarCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -99,35 +106,38 @@ export default function DashboardClient() {
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
-        const lineas = text.split(/\r?\n/).filter(line => line.trim() !== '');
+        const lineas = text.split(/\r?\n/).filter((line) => line.trim() !== '');
 
         if (lineas.length <= 1) {
           alert('El archivo CSV está vacío o solo contiene encabezados.');
           return;
         }
 
-        // Se asume CSV con cabeceras: nombre,boletos,telefono (o en ese orden)
-        const cabeceras = lineas[0].toLowerCase().split(',').map(h => h.trim());
-        const indexNombre = cabeceras.findIndex(h => h.includes('nombre'));
-        const indexBoletos = cabeceras.findIndex(h => h.includes('boleto') || h.includes('pase'));
-        const indexTelefono = cabeceras.findIndex(h => h.includes('tel') || h.includes('cel') || h.includes('whats'));
+        const cabeceras = lineas[0].toLowerCase().split(',').map((h) => h.trim());
+        const indexNombre = cabeceras.findIndex((h) => h.includes('nombre'));
+        const indexBoletos = cabeceras.findIndex(
+          (h) => h.includes('boleto') || h.includes('pase')
+        );
+        const indexTelefono = cabeceras.findIndex(
+          (h) => h.includes('tel') || h.includes('cel') || h.includes('whats')
+        );
 
         const nuevosInvitados = [];
 
         for (let i = 1; i < lineas.length; i++) {
-          const valores = lineas[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+          const valores = lineas[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
           if (valores.length === 0 || !valores[0]) continue;
 
           const nombre = indexNombre !== -1 ? valores[indexNombre] : valores[0];
           const boletos = indexBoletos !== -1 ? parseInt(valores[indexBoletos]) || 1 : parseInt(valores[1]) || 1;
-          const telefono = indexTelefono !== -1 ? valores[indexTelefono] : (valores[2] || null);
+          const telefono = indexTelefono !== -1 ? valores[indexTelefono] : valores[2] || null;
 
           if (nombre) {
             nuevosInvitados.push({
               nombre,
               boletos,
               telefono,
-              asistencia: null,
+              estado: 'pendiente',
             });
           }
         }
@@ -139,7 +149,7 @@ export default function DashboardClient() {
           cargarInvitados();
         }
       } catch (err: any) {
-        console.error('Error al subir CSV:', err);
+        console.error('Error al procesar el CSV:', err);
         alert('Hubo un error al procesar el CSV: ' + err.message);
       } finally {
         setCargandoCSV(false);
@@ -164,7 +174,6 @@ export default function DashboardClient() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Input oculto para CSV */}
           <input
             type="file"
             ref={fileInputRef}
@@ -200,7 +209,7 @@ export default function DashboardClient() {
         <div className="bg-white p-5 rounded-xl border border-emerald-100 bg-emerald-50/20 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Boletos Confirmados</p>
           <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">{boletosConfirmados}</p>
-          <p className="text-xs text-emerald-600 mt-1">{confirmados.length} familias confirmadas</p>
+          <p className="text-xs text-emerald-600 mt-1">{confirmados.length} invitaciones confirmadas</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm">
@@ -216,7 +225,7 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* Controles de Búsqueda y Filtros */}
+      {/* Barra de Búsqueda y Filtros */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="w-full md:w-80">
           <input
@@ -272,60 +281,62 @@ export default function DashboardClient() {
                   </td>
                 </tr>
               ) : (
-                invitadosFiltrados.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-4 font-medium text-slate-800">
-                      {inv.nombre}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      {inv.boletos} {inv.boletos === 1 ? 'boleto' : 'boletos'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {inv.asistencia === true && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                          Confirmado
-                        </span>
-                      )}
-                      {inv.asistencia === false && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
-                          Declinado
-                        </span>
-                      )}
-                      {(inv.asistencia === null || inv.asistencia === undefined) && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                          Pendiente
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-semibold">
-                      {inv.asistencia === true ? (inv.pases_confirmados ?? inv.boletos) : '-'}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Botón WhatsApp */}
-                        <button
-                          onClick={() => enviarWhatsApp(inv)}
-                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
-                          title="Enviar invitación por WhatsApp"
-                        >
-                          💬 WhatsApp
-                        </button>
+                invitadosFiltrados.map((inv) => {
+                  const est = getEstado(inv);
+                  const cantBoletos = getBoletos(inv);
 
-                        {/* Botón Copiar Link */}
-                        <button
-                          onClick={() => copiarEnlace(inv.id)}
-                          className={`text-xs px-2.5 py-1.5 rounded border transition ${
-                            copiadoId === inv.id
-                              ? 'bg-emerald-600 border-emerald-600 text-white'
-                              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                          }`}
-                        >
-                          {copiadoId === inv.id ? '¡Copiado!' : 'Copiar link'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                  return (
+                    <tr key={inv.id} className="hover:bg-slate-50/60 transition">
+                      <td className="py-3.5 px-4 font-medium text-slate-800">
+                        {inv.nombre}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">
+                        {cantBoletos > 0 ? `${cantBoletos} ${cantBoletos === 1 ? 'boleto' : 'boletos'}` : '—'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {est === 'confirmado' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                            Confirmado
+                          </span>
+                        )}
+                        {(est === 'declinado' || est === 'cancelado' || est === 'no') && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                            Declinado
+                          </span>
+                        )}
+                        {est === 'pendiente' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            Pendiente
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-semibold">
+                        {est === 'confirmado' ? (inv.pases_confirmados ?? (cantBoletos > 0 ? cantBoletos : '-')) : '-'}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => enviarWhatsApp(inv)}
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+                            title="Enviar invitación por WhatsApp"
+                          >
+                            💬 WhatsApp
+                          </button>
+                          <button
+                            onClick={() => copiarEnlace(inv.id)}
+                            className={`text-xs px-2.5 py-1.5 rounded border transition ${
+                              copiadoId === inv.id
+                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {copiadoId === inv.id ? '¡Copiado!' : 'Copiar link'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
