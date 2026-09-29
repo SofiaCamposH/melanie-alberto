@@ -19,6 +19,11 @@ export default function InvitacionZelda() {
   const naviAudioRef = useRef<HTMLAudioElement>(null);
   const contenidoRef = useRef<HTMLDivElement>(null);
 
+  // Manejo de boletos aceptados
+  const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
+  const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
+
+  // Formulario simple de música (sin Spotify)
   const [titulo, setTitulo] = useState('');
   const [artista, setArtista] = useState('');
   const [enviandoCancion, setEnviandoCancion] = useState(false);
@@ -46,7 +51,7 @@ export default function InvitacionZelda() {
         setFaltan({
           dias: Math.floor(distancia / (1000 * 60 * 60 * 24)),
           horas: Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutos: Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60)),
+          minutos: Math.floor((distancia % (1000 * 60)) / (1000 * 60)),
           segundos: Math.floor((distancia % (1000 * 60)) / 1000),
         });
       }
@@ -61,6 +66,9 @@ export default function InvitacionZelda() {
       setErrorInfo('No se encontró la invitación.');
     } else {
       setInvitado(data);
+      const asignados = Number(data.boletos_asignados) || 1;
+      const aceptados = Number(data.boletos_aceptados) || asignados;
+      setBoletosSeleccionados(aceptados > 0 ? aceptados : 1);
     }
     setCargando(false);
   };
@@ -69,7 +77,6 @@ export default function InvitacionZelda() {
     if (naviVolando) return;
     setNaviVolando(true);
     
-    // Reproducir Navi al instante
     if (naviAudioRef.current) {
       naviAudioRef.current.play().catch(e => console.log("Error reproduciendo Navi:", e));
     }
@@ -87,19 +94,35 @@ export default function InvitacionZelda() {
   };
 
   const confirmarAsistencia = async () => {
-    const { error } = await supabase.from('invitados').update({ estado: 'confirmado' }).eq('id', id);
+    setGuardandoConfirmacion(true);
+    const { error } = await supabase
+      .from('invitados')
+      .update({ 
+        estado: 'confirmado',
+        boletos_aceptados: boletosSeleccionados
+      })
+      .eq('id', id);
+
     if (!error) {
-      alert("¡Gracias por confirmar tu asistencia!");
+      alert(`¡Gracias por confirmar tu asistencia con ${boletosSeleccionados} ${boletosSeleccionados === 1 ? 'pase' : 'pases'}!`);
       obtenerInvitado();
+    } else {
+      alert("Hubo un error al confirmar. Inténtalo de nuevo.");
     }
+    setGuardandoConfirmacion(false);
   };
 
-  // NUEVA FUNCIÓN: Para cuando el invitado no pueda asistir
   const rechazarAsistencia = async () => {
-    // Pedimos una confirmación extra para evitar clics por error
     const seguro = window.confirm("¿Estás seguro de que no podrás acompañarnos?");
     if (seguro) {
-      const { error } = await supabase.from('invitados').update({ estado: 'rechazado' }).eq('id', id);
+      const { error } = await supabase
+        .from('invitados')
+        .update({ 
+          estado: 'rechazado',
+          boletos_aceptados: 0
+        })
+        .eq('id', id);
+
       if (!error) {
         alert("Lamentamos que no puedas acompañarnos. ¡Gracias por avisarnos!");
         obtenerInvitado();
@@ -113,7 +136,10 @@ export default function InvitacionZelda() {
     const { error } = await supabase.from('canciones').insert([{ titulo, artista, invitado_id: id }]);
     if (!error) {
       alert("¡Canción sugerida con éxito!");
-      setTitulo(''); setArtista('');
+      setTitulo(''); 
+      setArtista('');
+    } else {
+      alert("Error al enviar la sugerencia. Verifica tu conexión.");
     }
     setEnviandoCancion(false);
   };
@@ -123,6 +149,8 @@ export default function InvitacionZelda() {
 
   if (cargando) return <div className="min-h-screen flex items-center justify-center text-white bg-black">Cargando...</div>;
   if (errorInfo) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{errorInfo}</div>;
+
+  const totalAsignados = Number(invitado?.boletos_asignados) || 1;
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
@@ -188,7 +216,7 @@ export default function InvitacionZelda() {
           <div className="absolute bottom-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute bottom-[16px] right-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-r-[6px] border-[#c5a059] pointer-events-none z-0"></div>
 
-          {/* PORTADA INICIAL (Solo Vitral) */}
+          {/* PORTADA INICIAL */}
           <div className="w-full min-h-[90svh] flex flex-col items-center justify-center p-6 relative z-10">
             <img 
               src="/inicio.png" 
@@ -200,10 +228,14 @@ export default function InvitacionZelda() {
           {/* ÁREA DE CONTENIDO */}
           <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-12 p-8 pt-4">
             
-            {/* ================= 1. NOMBRES E INTRO ================= */}
-            <div className="flex flex-col items-center w-full">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-wider text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>
-                Melanie <span className="text-[#8C6D46] px-2">&</span> Alberto
+            {/* ================= 1. NOMBRES E INTRO (Melanie & arriba, Alberto abajo) ================= */}
+            <div className="flex flex-col items-center w-full text-center">
+              <h1 
+                className="text-5xl sm:text-6xl md:text-7xl font-normal tracking-wider leading-none text-[#1f4027] drop-shadow-sm flex flex-col items-center" 
+                style={{ fontFamily: "'Zelda', sans-serif" }}
+              >
+                <span>Melanie &</span>
+                <span className="mt-2">Alberto</span>
               </h1>
             </div>
 
@@ -241,7 +273,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 3. CARRUSEL "NOSOTROS" ================= */}
+            {/* ================= 3. CARRUSEL "NOSOTROS" (Flechas limpias sin caja azul) ================= */}
             <div className="w-full flex flex-col items-center">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
               
@@ -252,11 +284,23 @@ export default function InvitacionZelda() {
                   </div>
                 </div>
 
-                <button onClick={fotoAnterior} className="absolute -left-6 sm:-left-8 top-1/2 -translate-y-1/2 bg-[#4A3B2C] text-[#f4e8c1] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-[#2d5c38] hover:scale-110 transition z-20 text-xl font-bold">
-                  &#9664;
+                {/* Flecha izquierda */}
+                <button 
+                  type="button"
+                  onClick={fotoAnterior} 
+                  aria-label="Foto anterior"
+                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none p-1"
+                >
+                  &#10094;
                 </button>
-                <button onClick={siguienteFoto} className="absolute -right-6 sm:-right-8 top-1/2 -translate-y-1/2 bg-[#4A3B2C] text-[#f4e8c1] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-[#2d5c38] hover:scale-110 transition z-20 text-xl font-bold">
-                  &#9654;
+                {/* Flecha derecha */}
+                <button 
+                  type="button"
+                  onClick={siguienteFoto} 
+                  aria-label="Siguiente foto"
+                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none p-1"
+                >
+                  &#10095;
                 </button>
               </div>
 
@@ -297,7 +341,7 @@ export default function InvitacionZelda() {
               </a>
             </div>
 
-            {/* ================= 5. MESA DE REGALOS (SIN TRANSFERENCIA) ================= */}
+            {/* ================= 5. MESA DE REGALOS ================= */}
             <div className="w-full text-center my-4">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
               
@@ -305,7 +349,6 @@ export default function InvitacionZelda() {
                 El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:
               </p>
 
-              {/* Botones con Logos de Liverpool y Amazon */}
               <div className="flex justify-center gap-6 my-8">
                 <a href="https://mesaderegalos.liverpool.com.mx/milistaderegalos/60041692" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
                   <img src="/liverpool.png" alt="Liverpool" className="h-10 sm:h-12 w-auto object-contain" />
@@ -324,11 +367,10 @@ export default function InvitacionZelda() {
               <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-2">Formal</p>
               <p className="text-[#4A3B2C] text-lg font-semibold">El blanco se reserva para la novia.</p>
               
-              {/* Imagen de Vestimenta */}
               <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-6 drop-shadow-md" />
             </div>
 
-            {/* ================= 7. CONFIRMACIÓN DE ASISTENCIA ================= */}
+            {/* ================= 7. CONFIRMACIÓN DE ASISTENCIA (Con selector de boletos) ================= */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Confirmación de Asistencia
@@ -344,14 +386,47 @@ export default function InvitacionZelda() {
                 <p className="text-sm text-[#4A3B2C] mt-2 font-semibold">Queremos que se relajen y disfruten de la fiesta al máximo.</p>
               </div>
               
-              <p className="text-lg font-semibold mb-6">
-                Hemos reservado <strong className="text-2xl text-[#8C6D46]">{invitado.boletos_asignados}</strong> pases para ti, {invitado.nombre}.
+              <p className="text-lg font-semibold mb-4">
+                Hemos reservado <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? 'pase' : 'pases'} para ti, {invitado.nombre}.
               </p>
+
+              {/* Selector de pases si tiene más de 1 asignado y aún no ha confirmado */}
+              {invitado.estado !== 'confirmado' && invitado.estado !== 'rechazado' && totalAsignados > 1 && (
+                <div className="mb-6 flex flex-col items-center">
+                  <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
+                    ¿Cuántos pases confirmas?
+                  </label>
+                  <div className="flex items-center gap-4 bg-white/70 px-4 py-2 rounded-xl border border-[#8C6D46]/40 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setBoletosSeleccionados(prev => Math.max(1, prev - 1))}
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                    >
+                      -
+                    </button>
+                    <span className="text-2xl font-bold text-[#1f4027] min-w-[2rem] text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>
+                      {boletosSeleccionados}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setBoletosSeleccionados(prev => Math.min(totalAsignados, prev + 1))}
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-xs text-[#8C6D46] mt-1.5 italic">
+                    de un máximo de {totalAsignados} {totalAsignados === 1 ? 'pase' : 'pases'}
+                  </span>
+                </div>
+              )}
               
               <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
                 {invitado.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
-                    <p className="font-bold italic text-xl drop-shadow-sm">✨ ¡Misión Aceptada! Asistencia confirmada.</p>
+                    <p className="font-bold italic text-xl drop-shadow-sm">
+                      ✨ ¡Misión Aceptada! Confirmaste {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? 'pase' : 'pases'}.
+                    </p>
                   </div>
                 ) : invitado.estado === 'rechazado' ? (
                   <div className="bg-[#4A3B2C] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
@@ -359,10 +434,17 @@ export default function InvitacionZelda() {
                   </div>
                 ) : (
                   <>
-                    <button onClick={confirmarAsistencia} className="bg-[#2d5c38] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] w-full sm:w-auto">
-                      Confirmar Asistencia
+                    <button 
+                      onClick={confirmarAsistencia} 
+                      disabled={guardandoConfirmacion}
+                      className="bg-[#2d5c38] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] w-full sm:w-auto disabled:opacity-50"
+                    >
+                      {guardandoConfirmacion ? 'Confirmando...' : `Confirmar (${boletosSeleccionados} ${boletosSeleccionados === 1 ? 'pase' : 'pases'})`}
                     </button>
-                    <button onClick={rechazarAsistencia} className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#4A3B2C] w-full sm:w-auto">
+                    <button 
+                      onClick={rechazarAsistencia} 
+                      className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#4A3B2C] w-full sm:w-auto"
+                    >
                       No podré asistir
                     </button>
                   </>
@@ -370,15 +452,31 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 8. CANCIONES ================= */}
+            {/* ================= 8. CANCIONES (Formulario Simple) ================= */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-4 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Melodías para la fiesta</h3>
               <p className="text-sm text-[#4A3B2C] mb-4 font-semibold">¿Qué canción no puede faltar?</p>
               <div className="flex flex-col gap-3 max-w-sm mx-auto">
-                <input type="text" placeholder="Canción" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" />
-                <input type="text" placeholder="Artista" value={artista} onChange={(e) => setArtista(e.target.value)} className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" />
+                <input 
+                  type="text" 
+                  placeholder="Canción" 
+                  value={titulo} 
+                  onChange={(e) => setTitulo(e.target.value)} 
+                  className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Artista" 
+                  value={artista} 
+                  onChange={(e) => setArtista(e.target.value)} 
+                  className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" 
+                />
                 
-                <button onClick={sugerirCancion} disabled={enviandoCancion} className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] mt-4 w-full">
+                <button 
+                  onClick={sugerirCancion} 
+                  disabled={enviandoCancion} 
+                  className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] mt-4 w-full disabled:opacity-50"
+                >
                   {enviandoCancion ? 'Enviando...' : (
                     <>
                       Enviar Sugerencia <span className="text-[#f4e8c1] text-xl leading-none">♫</span>
