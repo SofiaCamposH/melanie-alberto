@@ -6,12 +6,11 @@ import { supabase } from '@/lib/supabase';
 interface Invitado {
   id: string;
   nombre: string;
-  boletos?: number;
-  pases?: number;
   telefono?: string;
   estado?: string;
-  pases_confirmados?: number;
-  created_at?: string;
+  boletos_asignados: number;
+  boletos_aceptados?: number | null;
+  creado_en?: string;
 }
 
 export default function DashboardClient() {
@@ -44,13 +43,11 @@ export default function DashboardClient() {
     }
   };
 
-  // Normalizadores para coincidir con la base de datos
-  const getBoletos = (inv: Invitado) => Number(inv.boletos ?? inv.pases ?? 0);
   const getEstado = (inv: Invitado) => (inv.estado || 'pendiente').toLowerCase().trim();
 
   // Métricas
   const totalInvitaciones = invitados.length;
-  const totalBoletos = invitados.reduce((acc, curr) => acc + getBoletos(curr), 0);
+  const totalBoletos = invitados.reduce((acc, curr) => acc + (Number(curr.boletos_asignados) || 0), 0);
 
   const confirmados = invitados.filter((i) => getEstado(i) === 'confirmado');
   const declinados = invitados.filter(
@@ -58,10 +55,13 @@ export default function DashboardClient() {
   );
   const pendientes = invitados.filter((i) => getEstado(i) === 'pendiente');
 
-  const boletosConfirmados = confirmados.reduce(
-    (acc, curr) => acc + (Number(curr.pases_confirmados ?? getBoletos(curr)) || 0),
-    0
-  );
+  // Si boletos_aceptados tiene número lo usa; si aún está en NULL pero confirmó, usa boletos_asignados
+  const boletosConfirmados = confirmados.reduce((acc, curr) => {
+    const aceptados = curr.boletos_aceptados !== null && curr.boletos_aceptados !== undefined
+      ? Number(curr.boletos_aceptados)
+      : Number(curr.boletos_asignados || 0);
+    return acc + aceptados;
+  }, 0);
 
   // Filtros y búsqueda
   const invitadosFiltrados = invitados.filter((inv) => {
@@ -116,7 +116,7 @@ export default function DashboardClient() {
         const cabeceras = lineas[0].toLowerCase().split(',').map((h) => h.trim());
         const indexNombre = cabeceras.findIndex((h) => h.includes('nombre'));
         const indexBoletos = cabeceras.findIndex(
-          (h) => h.includes('boleto') || h.includes('pase')
+          (h) => h.includes('boleto') || h.includes('pase') || h.includes('asignado')
         );
         const indexTelefono = cabeceras.findIndex(
           (h) => h.includes('tel') || h.includes('cel') || h.includes('whats')
@@ -129,15 +129,16 @@ export default function DashboardClient() {
           if (valores.length === 0 || !valores[0]) continue;
 
           const nombre = indexNombre !== -1 ? valores[indexNombre] : valores[0];
-          const boletos = indexBoletos !== -1 ? parseInt(valores[indexBoletos]) || 1 : parseInt(valores[1]) || 1;
+          const boletos_asignados = indexBoletos !== -1 ? parseInt(valores[indexBoletos]) || 1 : parseInt(valores[1]) || 1;
           const telefono = indexTelefono !== -1 ? valores[indexTelefono] : valores[2] || null;
 
           if (nombre) {
             nuevosInvitados.push({
               nombre,
-              boletos,
+              boletos_asignados,
               telefono,
               estado: 'pendiente',
+              boletos_aceptados: null,
             });
           }
         }
@@ -283,7 +284,8 @@ export default function DashboardClient() {
               ) : (
                 invitadosFiltrados.map((inv) => {
                   const est = getEstado(inv);
-                  const cantBoletos = getBoletos(inv);
+                  const boletosAsignados = Number(inv.boletos_asignados || 0);
+                  const boletosAceptados = inv.boletos_aceptados;
 
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/60 transition">
@@ -291,7 +293,7 @@ export default function DashboardClient() {
                         {inv.nombre}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600">
-                        {cantBoletos > 0 ? `${cantBoletos} ${cantBoletos === 1 ? 'boleto' : 'boletos'}` : '—'}
+                        {boletosAsignados} {boletosAsignados === 1 ? 'boleto' : 'boletos'}
                       </td>
                       <td className="py-3.5 px-4">
                         {est === 'confirmado' && (
@@ -311,7 +313,11 @@ export default function DashboardClient() {
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 font-semibold">
-                        {est === 'confirmado' ? (inv.pases_confirmados ?? (cantBoletos > 0 ? cantBoletos : '-')) : '-'}
+                        {est === 'confirmado'
+                          ? (boletosAceptados !== null && boletosAceptados !== undefined
+                              ? `${boletosAceptados} ${boletosAceptados === 1 ? 'pase' : 'pases'}`
+                              : `${boletosAsignados} ${boletosAsignados === 1 ? 'pase' : 'pases'}`)
+                          : '-'}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
