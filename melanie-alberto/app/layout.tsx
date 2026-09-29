@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import "./globals.css"; // Asegúrate de conservar la importación de tus estilos globales
 
 export const metadata: Metadata = {
   title: "Boda Melanie & Alberto | Nuestra Boda",
   description: "Estás cordialmente invitado a celebrar nuestra boda. Acompáñanos en este día tan especial.",
   icons: {
-    icon: "/favicon.ico", // o "/inicio.png" si quieres un ícono personalizado
+    icon: "/favicon.ico",
   },
   openGraph: {
     title: "Boda Melanie & Alberto",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     siteName: "Boda Melanie & Alberto",
     images: [
       {
-        url: "/inicio.png", // La imagen que saldrá en la vista previa al enviar el link por WhatsApp
+        url: "/inicio.png",
         width: 800,
         height: 600,
         alt: "Invitación de Boda Melanie & Alberto",
@@ -23,3 +24,17 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es">
+      <body className="antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}
