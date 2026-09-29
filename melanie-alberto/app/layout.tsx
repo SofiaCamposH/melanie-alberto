@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Boda Melanie & Alberto | Nuestra Boda",
   description: "Estás cordialmente invitado a celebrar nuestra boda. Acompáñanos en este día tan especial.",
   icons: {
-    icon: "@public/icon.png",
+    icon: "/icon.png",
   },
   openGraph: {
     title: "Boda Melanie & Alberto",
