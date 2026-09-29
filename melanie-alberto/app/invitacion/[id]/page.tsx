@@ -3,6 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+interface iTunesTrack {
+  trackId: number;
+  trackName: string;
+  artistName: string;
+  artworkUrl100: string;
+  previewUrl?: string;
+}
+
 export default function InvitacionZelda() {
   const params = useParams();
   const id = params.id as string;
@@ -17,16 +25,21 @@ export default function InvitacionZelda() {
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const naviAudioRef = useRef<HTMLAudioElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
   const contenidoRef = useRef<HTMLDivElement>(null);
 
   // Manejo de boletos aceptados
   const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
   const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
 
-  // Formulario simple de música (sin Spotify)
-  const [titulo, setTitulo] = useState('');
-  const [artista, setArtista] = useState('');
+  // Estados del Buscador de iTunes
+  const [queryMusica, setQueryMusica] = useState('');
+  const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
+  const [buscandoiTunes, setBuscandoiTunes] = useState(false);
+  const [cancionSeleccionada, setCancionSeleccionada] = useState<iTunesTrack | null>(null);
+  const [previewSonando, setPreviewSonando] = useState(false);
   const [enviandoCancion, setEnviandoCancion] = useState(false);
+  const [cancionEnviada, setCancionEnviada] = useState(false);
 
   const [fotoIndex, setFotoIndex] = useState(0);
   const fotos = ['/foto1.jpeg', '/foto2.jpeg', '/foto3.jpeg', '/foto4.jpeg', '/foto5.jpeg'];
@@ -60,6 +73,37 @@ export default function InvitacionZelda() {
     return () => clearInterval(intervalo);
   }, []);
 
+  // Búsqueda en iTunes Search API con Debounce
+  useEffect(() => {
+    if (queryMusica.trim().length < 2) {
+      setResultadosiTunes([]);
+      setBuscandoiTunes(false);
+      return;
+    }
+
+    // Si ya seleccionó una pista y el texto coincide, no volvemos a disparar la búsqueda
+    if (cancionSeleccionada && `${cancionSeleccionada.trackName} - ${cancionSeleccionada.artistName}` === queryMusica) {
+      return;
+    }
+
+    setBuscandoiTunes(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://itunes.apple.com/search?term=${encodeURIComponent(queryMusica)}&entity=song&limit=5`
+        );
+        const data = await res.json();
+        setResultadosiTunes(data.results || []);
+      } catch (err) {
+        console.error("Error buscando en iTunes:", err);
+      } finally {
+        setBuscandoiTunes(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [queryMusica, cancionSeleccionada]);
+
   const obtenerInvitado = async () => {
     const { data, error } = await supabase.from('invitados').select('*').eq('id', id).single();
     if (error || !data) {
@@ -86,7 +130,7 @@ export default function InvitacionZelda() {
       setTimeout(() => {
         setSobreAbierto(true);
         if (audioRef.current) {
-          audioRef.current.volume = 0.6;
+          audioRef.current.volume = 0.5;
           audioRef.current.play().catch(e => console.log("Error reproduciendo música:", e));
         }
       }, 800);
@@ -130,14 +174,57 @@ export default function InvitacionZelda() {
     }
   };
 
-  const sugerirCancion = async () => {
-    if (!titulo.trim()) return alert("Ingresa el nombre de la canción.");
+  // Manejo de Preview de Audio de iTunes
+  const togglePreview = (url?: string) => {
+    if (!url || !previewAudioRef.current) return;
+
+    if (previewSonando) {
+      previewAudioRef.current.pause();
+      setPreviewSonando(false);
+    } else {
+      // Bajamos el volumen de la música de fondo de Zelda
+      if (audioRef.current) audioRef.current.volume = 0.15;
+      
+      previewAudioRef.current.src = url;
+      previewAudioRef.current.play().then(() => {
+        setPreviewSonando(true);
+      }).catch(e => console.log("Error en preview:", e));
+    }
+  };
+
+  const seleccionarPista = (track: iTunesTrack) => {
+    setCancionSeleccionada(track);
+    setQueryMusica(`${track.trackName} - ${track.artistName}`);
+    setResultadosiTunes([]);
+    if (track.previewUrl) {
+      togglePreview(track.previewUrl);
+    }
+  };
+
+  const enviarCancion = async () => {
+    if (!queryMusica.trim()) return alert("Busca o escribe una canción primero.");
     setEnviandoCancion(true);
-    const { error } = await supabase.from('canciones').insert([{ titulo, artista, invitado_id: id }]);
+
+    const tituloAEnviar = cancionSeleccionada ? cancionSeleccionada.trackName : queryMusica;
+    const artistaAEnviar = cancionSeleccionada ? cancionSeleccionada.artistName : 'No especificado';
+
+    const { error } = await supabase.from('canciones').insert([
+      { 
+        titulo: tituloAEnviar, 
+        artista: artistaAEnviar, 
+        invitado_id: id 
+      }
+    ]);
+
     if (!error) {
-      alert("¡Canción sugerida con éxito!");
-      setTitulo(''); 
-      setArtista('');
+      setCancionEnviada(true);
+      setCancionSeleccionada(null);
+      setQueryMusica('');
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        setPreviewSonando(false);
+      }
+      if (audioRef.current) audioRef.current.volume = 0.5;
     } else {
       alert("Error al enviar la sugerencia. Verifica tu conexión.");
     }
@@ -156,8 +243,15 @@ export default function InvitacionZelda() {
     <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
       <audio ref={audioRef} src="/musica.mp3" loop />
       <audio ref={naviAudioRef} src="/navi.mp3" preload="auto" />
+      <audio 
+        ref={previewAudioRef} 
+        onEnded={() => {
+          setPreviewSonando(false);
+          if (audioRef.current) audioRef.current.volume = 0.5;
+        }} 
+      />
 
-      {/* VISTA 1: EL SOBRE CERRADO CON NAVI */}
+      {/* VISTA 1: SOBRE CERRADO CON NAVI */}
       {!sobreAbierto && (
         <div 
           className={`transition-all duration-700 transform flex flex-col items-center justify-center relative
@@ -194,7 +288,7 @@ export default function InvitacionZelda() {
         </div>
       )}
 
-      {/* VISTA 2: LA INVITACIÓN ABIERTA CON FONDO DE PERGAMINO */}
+      {/* VISTA 2: INVITACIÓN ABIERTA CON PERGAMINO */}
       {sobreAbierto && (
         <div 
           className="animate-fade-in max-w-lg w-full min-h-screen shadow-[0_0_50px_rgba(0,0,0,0.8)] relative text-[#4A3B2C] flex flex-col items-center pb-24"
@@ -206,7 +300,7 @@ export default function InvitacionZelda() {
             fontFamily: "'Textos', sans-serif" 
           }}
         >
-          {/* MARCO MULTICAPA ESTILO FANTASÍA */}
+          {/* MARCOS ESTILO FANTASÍA */}
           <div className="absolute inset-0 border-[12px] border-[#1f4027] pointer-events-none z-0"></div>
           <div className="absolute inset-[12px] border-[4px] border-[#c5a059] pointer-events-none z-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)]"></div>
           <div className="absolute inset-[24px] border border-[#8C6D46]/40 pointer-events-none z-0"></div>
@@ -216,7 +310,7 @@ export default function InvitacionZelda() {
           <div className="absolute bottom-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute bottom-[16px] right-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-r-[6px] border-[#c5a059] pointer-events-none z-0"></div>
 
-          {/* PORTADA INICIAL (Espacio ajustado para que no quede hueco hacia abajo) */}
+          {/* VITRAL INICIAL */}
           <div className="w-full flex flex-col items-center justify-center pt-8 pb-3 px-6 relative z-10">
             <img 
               src="/inicio.png" 
@@ -225,10 +319,10 @@ export default function InvitacionZelda() {
             />
           </div>
 
-          {/* ÁREA DE CONTENIDO (Espaciado compacto) */}
+          {/* CONTENIDO PRINCIPAL */}
           <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-7 px-6 pt-0">
             
-            {/* ================= 1. NOMBRES E INTRO (Color original, mucho más grande y sin huecos) ================= */}
+            {/* 1. NOMBRES E INTRO */}
             <div className="flex flex-col items-center w-full text-center mt-1">
               <h1 
                 className="text-6xl sm:text-7xl md:text-8xl font-normal tracking-wide leading-[0.9] text-[#4A3B2C] flex flex-col items-center" 
@@ -248,7 +342,7 @@ export default function InvitacionZelda() {
 
             <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
 
-            {/* ================= 2. CONTADOR (Espacio superior reducido) ================= */}
+            {/* 2. CONTADOR */}
             <div className="flex flex-col items-center justify-center w-full -mt-1">
               <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>Solo faltan:</h2>
               
@@ -275,7 +369,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 3. CARRUSEL "NOSOTROS" ================= */}
+            {/* 3. CARRUSEL */}
             <div className="w-full flex flex-col items-center pt-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
               
@@ -286,7 +380,6 @@ export default function InvitacionZelda() {
                   </div>
                 </div>
 
-                {/* Flecha izquierda limpia */}
                 <button 
                   type="button"
                   onClick={fotoAnterior} 
@@ -295,7 +388,6 @@ export default function InvitacionZelda() {
                 >
                   &#10094;
                 </button>
-                {/* Flecha derecha limpia */}
                 <button 
                   type="button"
                   onClick={siguienteFoto} 
@@ -313,7 +405,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 4. FECHA Y LUGAR ================= */}
+            {/* 4. FECHA Y LUGAR */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
               
@@ -343,7 +435,7 @@ export default function InvitacionZelda() {
               </a>
             </div>
 
-            {/* ================= 5. MESA DE REGALOS ================= */}
+            {/* 5. MESA DE REGALOS */}
             <div className="w-full text-center my-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
               
@@ -363,7 +455,7 @@ export default function InvitacionZelda() {
 
             <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
 
-            {/* ================= 6. CÓDIGO DE VESTIMENTA ================= */}
+            {/* 6. CÓDIGO DE VESTIMENTA */}
             <div className="w-full text-center my-2">
               <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Código de Vestimenta</h2>
               <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">Formal</p>
@@ -372,7 +464,7 @@ export default function InvitacionZelda() {
               <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
 
-            {/* ================= 7. CONFIRMACIÓN DE ASISTENCIA (Con selector de boletos) ================= */}
+            {/* 7. CONFIRMACIÓN DE ASISTENCIA */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Confirmación de Asistencia
@@ -392,7 +484,6 @@ export default function InvitacionZelda() {
                 Hemos reservado <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? 'pase' : 'pases'} para ti, {invitado.nombre}.
               </p>
 
-              {/* Selector de pases si tiene más de 1 asignado y aún no ha confirmado */}
               {invitado.estado !== 'confirmado' && invitado.estado !== 'rechazado' && totalAsignados > 1 && (
                 <div className="mb-5 flex flex-col items-center">
                   <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
@@ -454,38 +545,130 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* ================= 8. CANCIONES (Formulario Simple) ================= */}
+            {/* 8. MELODÍAS (INTEGRACIÓN ITUNES SEARCH API ADAPTADA) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
-              <h3 className="text-3xl sm:text-4xl mb-3 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Melodías para la fiesta</h3>
-              <p className="text-sm text-[#4A3B2C] mb-3 font-semibold">¿Qué canción no puede faltar?</p>
-              <div className="flex flex-col gap-3 max-w-sm mx-auto">
-                <input 
-                  type="text" 
-                  placeholder="Canción" 
-                  value={titulo} 
-                  onChange={(e) => setTitulo(e.target.value)} 
-                  className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" 
-                />
-                <input 
-                  type="text" 
-                  placeholder="Artista" 
-                  value={artista} 
-                  onChange={(e) => setArtista(e.target.value)} 
-                  className="bg-transparent border-b-2 border-[#8C6D46] p-2 placeholder-[#8C6D46]/70 focus:outline-none font-semibold text-[#4A3B2C]" 
-                />
-                
-                <button 
-                  onClick={sugerirCancion} 
-                  disabled={enviandoCancion} 
-                  className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] mt-3 w-full disabled:opacity-50"
-                >
-                  {enviandoCancion ? 'Enviando...' : (
-                    <>
-                      Enviar Sugerencia <span className="text-[#f4e8c1] text-xl leading-none">♫</span>
-                    </>
+              <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
+                Melodías para la fiesta
+              </h3>
+              <p className="text-sm text-[#4A3B2C] mb-4 font-semibold">
+                ¿Qué canción no puede faltar en la pista?
+              </p>
+
+              {cancionEnviada ? (
+                <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 rounded-xl border border-[#c5a059] max-w-sm mx-auto shadow-md">
+                  <p className="font-bold text-base mb-1">🎵 ¡Melodía agregada a la lista!</p>
+                  <p className="text-xs opacity-90 mb-3">Los novios revisarán tu recomendación.</p>
+                  <button 
+                    onClick={() => setCancionEnviada(false)} 
+                    className="text-xs underline font-bold uppercase tracking-wider text-[#c5a059] hover:text-white"
+                  >
+                    Sugerir otra canción
+                  </button>
+                </div>
+              ) : (
+                <div className="relative max-w-sm mx-auto flex flex-col gap-3">
+                  {/* Input de Búsqueda */}
+                  <div className="relative w-full">
+                    <input 
+                      type="text" 
+                      placeholder="Busca por canción o artista..." 
+                      value={queryMusica} 
+                      onChange={(e) => {
+                        setQueryMusica(e.target.value);
+                        if (cancionSeleccionada) setCancionSeleccionada(null);
+                      }} 
+                      className="w-full bg-[#f4e8c1]/90 border-2 border-[#8C6D46] rounded-xl px-4 py-2.5 text-sm font-semibold text-[#4A3B2C] placeholder-[#8C6D46]/70 focus:outline-none focus:ring-2 focus:ring-[#1f4027]" 
+                    />
+                    {buscandoiTunes && (
+                      <span className="absolute right-3 top-3 text-xs text-[#8C6D46] animate-pulse">
+                        Buscando...
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Resultados Desplegables de iTunes */}
+                  {resultadosiTunes.length > 0 && !cancionSeleccionada && (
+                    <div className="absolute top-12 left-0 right-0 z-30 bg-[#f8f5eb] border-2 border-[#8C6D46] rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-[#8C6D46]/20 text-left">
+                      {resultadosiTunes.map((track) => (
+                        <div 
+                          key={track.trackId}
+                          onClick={() => seleccionarPista(track)}
+                          className="flex items-center gap-3 p-2.5 hover:bg-[#e8dcc4] cursor-pointer transition"
+                        >
+                          <img 
+                            src={track.artworkUrl100} 
+                            alt={track.trackName} 
+                            className="w-10 h-10 rounded-md object-cover shadow-sm flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-[#1f4027] truncate">
+                              {track.trackName}
+                            </p>
+                            <p className="text-[11px] text-[#8C6D46] truncate">
+                              {track.artistName}
+                            </p>
+                          </div>
+                          {track.previewUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePreview(track.previewUrl);
+                              }}
+                              className="text-xs bg-[#1f4027] text-white px-2 py-1 rounded-full hover:bg-[#2d5c38] transition flex-shrink-0"
+                              title="Escuchar 30s"
+                            >
+                              ▶ 30s
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </button>
-              </div>
+
+                  {/* Tarjeta de Canción Seleccionada */}
+                  {cancionSeleccionada && (
+                    <div className="flex items-center gap-3 bg-[#f8f5eb] p-2.5 rounded-xl border border-[#c5a059] shadow-sm text-left">
+                      <img 
+                        src={cancionSeleccionada.artworkUrl100} 
+                        alt={cancionSeleccionada.trackName} 
+                        className="w-12 h-12 rounded-lg object-cover shadow"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-[#1f4027] truncate">
+                          {cancionSeleccionada.trackName}
+                        </p>
+                        <p className="text-[11px] text-[#8C6D46] truncate">
+                          {cancionSeleccionada.artistName}
+                        </p>
+                      </div>
+                      {cancionSeleccionada.previewUrl && (
+                        <button
+                          type="button"
+                          onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
+                          className="w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition text-sm flex-shrink-0"
+                          title={previewSonando ? "Pausar" : "Escuchar muestra"}
+                        >
+                          {previewSonando ? "❚❚" : "▶"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Botón Enviar Sugerencia */}
+                  <button 
+                    onClick={enviarCancion} 
+                    disabled={enviandoCancion || !queryMusica.trim()} 
+                    className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-sm uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[3px_3px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] rounded-xl mt-1 w-full disabled:opacity-50"
+                  >
+                    {enviandoCancion ? 'Enviando...' : (
+                      <>
+                        Sugerir Melodía <span className="text-base leading-none">♫</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
