@@ -11,6 +11,12 @@ interface iTunesTrack {
   previewUrl?: string;
 }
 
+interface CancionSugerida {
+  id?: string;
+  titulo: string;
+  artista: string;
+}
+
 export default function InvitacionZelda() {
   const params = useParams();
   const id = params.id as string;
@@ -32,14 +38,14 @@ export default function InvitacionZelda() {
   const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
   const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
 
-  // Estados del Buscador de iTunes
+  // Estados del Buscador de iTunes y múltiples canciones
   const [queryMusica, setQueryMusica] = useState('');
   const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
   const [buscandoiTunes, setBuscandoiTunes] = useState(false);
   const [cancionSeleccionada, setCancionSeleccionada] = useState<iTunesTrack | null>(null);
   const [previewSonando, setPreviewSonando] = useState(false);
   const [enviandoCancion, setEnviandoCancion] = useState(false);
-  const [cancionEnviada, setCancionEnviada] = useState(false);
+  const [cancionesSugeridas, setCancionesSugeridas] = useState<CancionSugerida[]>([]);
 
   const [fotoIndex, setFotoIndex] = useState(0);
   const fotos = ['/foto1.jpeg', '/foto2.jpeg', '/foto3.jpeg', '/foto4.jpeg', '/foto5.jpeg'];
@@ -47,7 +53,10 @@ export default function InvitacionZelda() {
   const [faltan, setFaltan] = useState({ dias: 0, horas: 0, minutos: 0, segundos: 0 });
 
   useEffect(() => {
-    if (id) obtenerInvitado();
+    if (id) {
+      obtenerInvitado();
+      cargarCancionesPrevias();
+    }
   }, [id]);
 
   useEffect(() => {
@@ -81,7 +90,6 @@ export default function InvitacionZelda() {
       return;
     }
 
-    // Si ya seleccionó una pista y el texto coincide, no volvemos a disparar la búsqueda
     if (cancionSeleccionada && `${cancionSeleccionada.trackName} - ${cancionSeleccionada.artistName}` === queryMusica) {
       return;
     }
@@ -115,6 +123,18 @@ export default function InvitacionZelda() {
       setBoletosSeleccionados(aceptados > 0 ? aceptados : 1);
     }
     setCargando(false);
+  };
+
+  const cargarCancionesPrevias = async () => {
+    const { data } = await supabase
+      .from('canciones')
+      .select('titulo, artista')
+      .eq('invitado_id', id)
+      .order('id', { ascending: true });
+
+    if (data) {
+      setCancionesSugeridas(data);
+    }
   };
 
   const tocarNavi = () => {
@@ -182,9 +202,7 @@ export default function InvitacionZelda() {
       previewAudioRef.current.pause();
       setPreviewSonando(false);
     } else {
-      // Bajamos el volumen de la música de fondo de Zelda
       if (audioRef.current) audioRef.current.volume = 0.15;
-      
       previewAudioRef.current.src = url;
       previewAudioRef.current.play().then(() => {
         setPreviewSonando(true);
@@ -206,7 +224,7 @@ export default function InvitacionZelda() {
     setEnviandoCancion(true);
 
     const tituloAEnviar = cancionSeleccionada ? cancionSeleccionada.trackName : queryMusica;
-    const artistaAEnviar = cancionSeleccionada ? cancionSeleccionada.artistName : 'No especificado';
+    const artistaAEnviar = cancionSeleccionada ? cancionSeleccionada.artistName : 'Varios / No especificado';
 
     const { error } = await supabase.from('canciones').insert([
       { 
@@ -217,7 +235,7 @@ export default function InvitacionZelda() {
     ]);
 
     if (!error) {
-      setCancionEnviada(true);
+      setCancionesSugeridas(prev => [...prev, { titulo: tituloAEnviar, artista: artistaAEnviar }]);
       setCancionSeleccionada(null);
       setQueryMusica('');
       if (previewAudioRef.current) {
@@ -384,7 +402,7 @@ export default function InvitacionZelda() {
                   type="button"
                   onClick={fotoAnterior} 
                   aria-label="Foto anterior"
-                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none p-1"
+                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10094;
                 </button>
@@ -392,7 +410,7 @@ export default function InvitacionZelda() {
                   type="button"
                   onClick={siguienteFoto} 
                   aria-label="Siguiente foto"
-                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none p-1"
+                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10095;
                 </button>
@@ -407,7 +425,7 @@ export default function InvitacionZelda() {
 
             {/* 4. FECHA Y LUGAR */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
               
               <div className="flex flex-col gap-5 text-lg text-[#4A3B2C] mb-6">
                 <div className="flex flex-col items-center justify-center">
@@ -493,7 +511,7 @@ export default function InvitacionZelda() {
                     <button
                       type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.max(1, prev - 1))}
-                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       -
                     </button>
@@ -503,7 +521,7 @@ export default function InvitacionZelda() {
                     <button
                       type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.min(totalAsignados, prev + 1))}
-                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       +
                     </button>
@@ -545,130 +563,142 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (INTEGRACIÓN ITUNES SEARCH API ADAPTADA) */}
+            {/* 8. MELODÍAS (MÚLTIPLES CANCIONES + ITUNES SIN CONTORNOS AZULES) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
               </h3>
               <p className="text-sm text-[#4A3B2C] mb-4 font-semibold">
-                ¿Qué canción no puede faltar en la pista?
+                ¿Qué canciones no pueden faltar en la pista? ¡Puedes sugerir varias!
               </p>
 
-              {cancionEnviada ? (
-                <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 rounded-xl border border-[#c5a059] max-w-sm mx-auto shadow-md">
-                  <p className="font-bold text-base mb-1">🎵 ¡Melodía agregada a la lista!</p>
-                  <p className="text-xs opacity-90 mb-3">Los novios revisarán tu recomendación.</p>
-                  <button 
-                    onClick={() => setCancionEnviada(false)} 
-                    className="text-xs underline font-bold uppercase tracking-wider text-[#c5a059] hover:text-white"
-                  >
-                    Sugerir otra canción
-                  </button>
-                </div>
-              ) : (
-                <div className="relative max-w-sm mx-auto flex flex-col gap-3">
-                  {/* Input de Búsqueda */}
-                  <div className="relative w-full">
-                    <input 
-                      type="text" 
-                      placeholder="Busca por canción o artista..." 
-                      value={queryMusica} 
-                      onChange={(e) => {
-                        setQueryMusica(e.target.value);
-                        if (cancionSeleccionada) setCancionSeleccionada(null);
-                      }} 
-                      className="w-full bg-[#f4e8c1]/90 border-2 border-[#8C6D46] rounded-xl px-4 py-2.5 text-sm font-semibold text-[#4A3B2C] placeholder-[#8C6D46]/70 focus:outline-none focus:ring-2 focus:ring-[#1f4027]" 
-                    />
-                    {buscandoiTunes && (
-                      <span className="absolute right-3 top-3 text-xs text-[#8C6D46] animate-pulse">
-                        Buscando...
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Resultados Desplegables de iTunes */}
-                  {resultadosiTunes.length > 0 && !cancionSeleccionada && (
-                    <div className="absolute top-12 left-0 right-0 z-30 bg-[#f8f5eb] border-2 border-[#8C6D46] rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-[#8C6D46]/20 text-left">
-                      {resultadosiTunes.map((track) => (
-                        <div 
-                          key={track.trackId}
-                          onClick={() => seleccionarPista(track)}
-                          className="flex items-center gap-3 p-2.5 hover:bg-[#e8dcc4] cursor-pointer transition"
-                        >
-                          <img 
-                            src={track.artworkUrl100} 
-                            alt={track.trackName} 
-                            className="w-10 h-10 rounded-md object-cover shadow-sm flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-[#1f4027] truncate">
-                              {track.trackName}
-                            </p>
-                            <p className="text-[11px] text-[#8C6D46] truncate">
-                              {track.artistName}
-                            </p>
-                          </div>
-                          {track.previewUrl && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePreview(track.previewUrl);
-                              }}
-                              className="text-xs bg-[#1f4027] text-white px-2 py-1 rounded-full hover:bg-[#2d5c38] transition flex-shrink-0"
-                              title="Escuchar 30s"
-                            >
-                              ▶ 30s
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Tarjeta de Canción Seleccionada */}
-                  {cancionSeleccionada && (
-                    <div className="flex items-center gap-3 bg-[#f8f5eb] p-2.5 rounded-xl border border-[#c5a059] shadow-sm text-left">
-                      <img 
-                        src={cancionSeleccionada.artworkUrl100} 
-                        alt={cancionSeleccionada.trackName} 
-                        className="w-12 h-12 rounded-lg object-cover shadow"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[#1f4027] truncate">
-                          {cancionSeleccionada.trackName}
-                        </p>
-                        <p className="text-[11px] text-[#8C6D46] truncate">
-                          {cancionSeleccionada.artistName}
-                        </p>
+              {/* Lista de canciones ya sugeridas */}
+              {cancionesSugeridas.length > 0 && (
+                <div className="max-w-sm mx-auto mb-4 text-left">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1f4027] mb-2 flex items-center gap-1.5">
+                    <span>✨</span> Tus sugerencias enviadas ({cancionesSugeridas.length}):
+                  </p>
+                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                    {cancionesSugeridas.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className="bg-[#f8f5eb]/90 px-3 py-1.5 rounded-lg border border-[#c5a059]/60 flex items-center justify-between text-xs"
+                      >
+                        <span className="font-semibold text-[#1f4027] truncate pr-2">
+                          🎵 {item.titulo}
+                        </span>
+                        <span className="text-[#8C6D46] text-[11px] truncate flex-shrink-0">
+                          {item.artista}
+                        </span>
                       </div>
-                      {cancionSeleccionada.previewUrl && (
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
-                          className="w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition text-sm flex-shrink-0"
-                          title={previewSonando ? "Pausar" : "Escuchar muestra"}
-                        >
-                          {previewSonando ? "❚❚" : "▶"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Botón Enviar Sugerencia */}
-                  <button 
-                    onClick={enviarCancion} 
-                    disabled={enviandoCancion || !queryMusica.trim()} 
-                    className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-sm uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[3px_3px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] rounded-xl mt-1 w-full disabled:opacity-50"
-                  >
-                    {enviandoCancion ? 'Enviando...' : (
-                      <>
-                        Sugerir Melodía <span className="text-base leading-none">♫</span>
-                      </>
-                    )}
-                  </button>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Formulario de búsqueda continua */}
+              <div className="relative max-w-sm mx-auto flex flex-col gap-3">
+                {/* Input de Búsqueda */}
+                <div className="relative w-full">
+                  <input 
+                    type="text" 
+                    placeholder="Busca una canción o escribe su nombre..." 
+                    value={queryMusica} 
+                    onChange={(e) => {
+                      setQueryMusica(e.target.value);
+                      if (cancionSeleccionada) setCancionSeleccionada(null);
+                    }} 
+                    className="w-full bg-[#f4e8c1]/90 border-2 border-[#8C6D46] rounded-xl px-4 py-2.5 text-sm font-semibold text-[#4A3B2C] placeholder-[#8C6D46]/70 focus:outline-none focus:ring-0 focus:border-[#1f4027]" 
+                  />
+                  {buscandoiTunes && (
+                    <span className="absolute right-3 top-3 text-xs text-[#8C6D46] animate-pulse">
+                      Buscando...
+                    </span>
+                  )}
+                </div>
+
+                {/* Desplegable de resultados iTunes */}
+                {resultadosiTunes.length > 0 && !cancionSeleccionada && (
+                  <div className="absolute top-12 left-0 right-0 z-30 bg-[#f8f5eb] border-2 border-[#8C6D46] rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-[#8C6D46]/20 text-left">
+                    {resultadosiTunes.map((track) => (
+                      <div 
+                        key={track.trackId}
+                        onClick={() => seleccionarPista(track)}
+                        className="flex items-center gap-3 p-2.5 hover:bg-[#e8dcc4] cursor-pointer transition"
+                      >
+                        <img 
+                          src={track.artworkUrl100} 
+                          alt={track.trackName} 
+                          className="w-10 h-10 rounded-md object-cover shadow-sm flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-[#1f4027] truncate">
+                            {track.trackName}
+                          </p>
+                          <p className="text-[11px] text-[#8C6D46] truncate">
+                            {track.artistName}
+                          </p>
+                        </div>
+                        {track.previewUrl && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePreview(track.previewUrl);
+                            }}
+                            className="text-xs bg-[#1f4027] text-white px-2.5 py-1 rounded-full hover:bg-[#2d5c38] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0"
+                            title="Escuchar 30s"
+                          >
+                            ▶ 30s
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tarjeta de Canción Seleccionada */}
+                {cancionSeleccionada && (
+                  <div className="flex items-center gap-3 bg-[#f8f5eb] p-2.5 rounded-xl border border-[#c5a059] shadow-sm text-left">
+                    <img 
+                      src={cancionSeleccionada.artworkUrl100} 
+                      alt={cancionSeleccionada.trackName} 
+                      className="w-12 h-12 rounded-lg object-cover shadow flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#1f4027] truncate">
+                        {cancionSeleccionada.trackName}
+                      </p>
+                      <p className="text-[11px] text-[#8C6D46] truncate">
+                        {cancionSeleccionada.artistName}
+                      </p>
+                    </div>
+                    {cancionSeleccionada.previewUrl && (
+                      <button
+                        type="button"
+                        onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
+                        className="w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition text-sm flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
+                        title={previewSonando ? "Pausar" : "Escuchar muestra"}
+                      >
+                        {previewSonando ? "❚❚" : "▶"}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Botón Enviar Canción */}
+                <button 
+                  onClick={enviarCancion} 
+                  disabled={enviandoCancion || !queryMusica.trim()} 
+                  className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-sm uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[3px_3px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] rounded-xl mt-1 w-full disabled:opacity-50 border-none outline-none focus:outline-none focus:ring-0"
+                >
+                  {enviandoCancion ? 'Guardando...' : (
+                    <>
+                      Agregar Melodía <span className="text-base leading-none">♫</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
           </div>
