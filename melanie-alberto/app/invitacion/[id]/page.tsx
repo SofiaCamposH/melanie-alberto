@@ -576,7 +576,7 @@ export default function InvitacionZelda() {
               {cancionesSugeridas.length > 0 && (
                 <div className="max-w-sm mx-auto mb-4 text-left">
                   <p className="text-xs font-bold uppercase tracking-wider text-[#1f4027] mb-2 flex items-center gap-1.5">
-                    <span>✨</span> Tus sugerencias enviadas ({cancionesSugeridas.length}):
+                    <span></span> Tus sugerencias enviadas ({cancionesSugeridas.length}):
                   </p>
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {cancionesSugeridas.map((item, idx) => (
