@@ -419,7 +419,7 @@ export default function DashboardClient() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              👥 Invitados ({totalInvitaciones})
+               Invitados ({totalInvitaciones})
             </button>
             <button
               onClick={() => setPestanaActiva('canciones')}
@@ -429,7 +429,7 @@ export default function DashboardClient() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🎵 Canciones ({canciones.length})
+               Canciones ({canciones.length})
             </button>
           </div>
         </div>
@@ -602,7 +602,7 @@ export default function DashboardClient() {
                                   className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
                                   title="Enviar invitación por WhatsApp"
                                 >
-                                  💬 WhatsApp
+                                   WhatsApp
                                 </button>
                                 <button
                                   onClick={() => copiarEnlace(inv.id)}
