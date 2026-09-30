@@ -272,7 +272,7 @@ export default function InvitacionZelda() {
         }}
       />
 
-      {/* VISTA 1: SOBRE CERRADO CON NAVI */}
+      {/* VISTA 1: SOBRE CERRADO CON NAVI (Clic en cualquier parte) */}
       {!sobreAbierto && (
         <div
           className={`transition-all duration-700 transform flex flex-col items-center justify-center relative
@@ -564,7 +564,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES SIN CONTORNOS AZULES) */}
+            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES - BOTÓN VERDE ZELDA SIN AZUL) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
@@ -611,7 +611,10 @@ export default function InvitacionZelda() {
                 <div className="relative max-w-sm mx-auto flex flex-col gap-3">
                   <div className="relative w-full">
                     <input
-                      type="text"
+                      type="search"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck="false"
                       placeholder="Busca una canción o escribe su nombre..."
                       value={queryMusica}
                       onChange={(e) => {
@@ -655,7 +658,8 @@ export default function InvitacionZelda() {
                                 e.stopPropagation();
                                 togglePreview(track.previewUrl);
                               }}
-                              className="cursor-pointer select-none text-xs bg-[#1f4027] text-white px-2.5 py-1 rounded-full hover:bg-[#2d5c38] transition flex-shrink-0"
+                              style={{ backgroundColor: '#1f4027', color: '#f4e8c1', borderColor: '#c5a059' }}
+                              className="cursor-pointer select-none text-xs px-2.5 py-1 rounded-full font-bold border shadow-sm flex-shrink-0 active:scale-95"
                               title="Escuchar 30s"
                             >
                               ▶ 30s
@@ -685,7 +689,8 @@ export default function InvitacionZelda() {
                       {cancionSeleccionada.previewUrl && (
                         <span
                           onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
-                          className="cursor-pointer select-none w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition text-sm flex-shrink-0 active:scale-95"
+                          style={{ backgroundColor: '#1f4027', color: '#f4e8c1', borderColor: '#c5a059' }}
+                          className="cursor-pointer select-none w-8 h-8 rounded-full border shadow flex items-center justify-center text-sm font-bold flex-shrink-0 active:scale-95"
                           title={previewSonando ? "Pausar" : "Escuchar muestra"}
                         >
                           {previewSonando ? "❚❚" : "▶"}
