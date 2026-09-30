@@ -272,7 +272,7 @@ export default function InvitacionZelda() {
         }}
       />
 
-      {/* VISTA 1: SOBRE CERRADO CON NAVI (Clic en cualquier parte) */}
+      {/* VISTA 1: SOBRE CERRADO ORIGINAL (Centrado intacto y clic en todo el sobre) */}
       {!sobreAbierto && (
         <div
           className={`transition-all duration-700 transform flex flex-col items-center justify-center relative
@@ -406,14 +406,16 @@ export default function InvitacionZelda() {
                 <span
                   onClick={fotoAnterior}
                   aria-label="Foto anterior"
-                  className="cursor-pointer select-none absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
+                  style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
+                  className="cursor-pointer absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
                 >
                   &#10094;
                 </span>
                 <span
                   onClick={siguienteFoto}
                   aria-label="Siguiente foto"
-                  className="cursor-pointer select-none absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
+                  style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
+                  className="cursor-pointer absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
                 >
                   &#10095;
                 </span>
@@ -513,6 +515,7 @@ export default function InvitacionZelda() {
                   <div className="flex items-center gap-4 bg-white/70 px-4 py-2 rounded-xl border border-[#8C6D46]/40 shadow-sm select-none">
                     <span
                       onClick={() => setBoletosSeleccionados(prev => Math.max(1, prev - 1))}
+                      style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
                       className="cursor-pointer w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
                     >
                       -
@@ -522,6 +525,7 @@ export default function InvitacionZelda() {
                     </span>
                     <span
                       onClick={() => setBoletosSeleccionados(prev => Math.min(totalAsignados, prev + 1))}
+                      style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
                       className="cursor-pointer w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
                     >
                       +
@@ -564,7 +568,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES - BOTÓN VERDE ZELDA SIN AZUL) */}
+            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES - BOTÓN VERDE ZELDA DEFINITIVO) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
@@ -611,10 +615,8 @@ export default function InvitacionZelda() {
                 <div className="relative max-w-sm mx-auto flex flex-col gap-3">
                   <div className="relative w-full">
                     <input
-                      type="search"
+                      type="text"
                       autoComplete="off"
-                      autoCorrect="off"
-                      spellCheck="false"
                       placeholder="Busca una canción o escribe su nombre..."
                       value={queryMusica}
                       onChange={(e) => {
@@ -658,8 +660,14 @@ export default function InvitacionZelda() {
                                 e.stopPropagation();
                                 togglePreview(track.previewUrl);
                               }}
-                              style={{ backgroundColor: '#1f4027', color: '#f4e8c1', borderColor: '#c5a059' }}
-                              className="cursor-pointer select-none text-xs px-2.5 py-1 rounded-full font-bold border shadow-sm flex-shrink-0 active:scale-95"
+                              style={{
+                                backgroundColor: '#1f4027',
+                                color: '#f4e8c1',
+                                border: '1px solid #c5a059',
+                                WebkitTapHighlightColor: 'transparent',
+                                userSelect: 'none'
+                              }}
+                              className="cursor-pointer select-none text-xs px-2.5 py-1 rounded-full font-bold shadow-sm flex-shrink-0 active:scale-95"
                               title="Escuchar 30s"
                             >
                               ▶ 30s
@@ -689,8 +697,14 @@ export default function InvitacionZelda() {
                       {cancionSeleccionada.previewUrl && (
                         <span
                           onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
-                          style={{ backgroundColor: '#1f4027', color: '#f4e8c1', borderColor: '#c5a059' }}
-                          className="cursor-pointer select-none w-8 h-8 rounded-full border shadow flex items-center justify-center text-sm font-bold flex-shrink-0 active:scale-95"
+                          style={{
+                            backgroundColor: '#1f4027',
+                            color: '#f4e8c1',
+                            border: '1px solid #c5a059',
+                            WebkitTapHighlightColor: 'transparent',
+                            userSelect: 'none'
+                          }}
+                          className="cursor-pointer select-none w-8 h-8 rounded-full shadow flex items-center justify-center text-sm font-bold flex-shrink-0 active:scale-95"
                           title={previewSonando ? "Pausar" : "Escuchar muestra"}
                         >
                           {previewSonando ? "❚❚" : "▶"}
