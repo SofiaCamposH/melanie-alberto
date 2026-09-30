@@ -261,7 +261,7 @@ export default function InvitacionZelda() {
   const totalAsignados = Number(invitado?.boletos_asignados) || 1;
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-x-hidden">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
       <audio ref={audioRef} src="/musica.mp3" loop />
       <audio ref={naviAudioRef} src="/navi.mp3" preload="auto" />
       <audio
@@ -272,7 +272,7 @@ export default function InvitacionZelda() {
         }}
       />
 
-      {/* VISTA 1: SOBRE CERRADO ORIGINAL (Centrado intacto y clic en todo el sobre) */}
+      {/* VISTA 1: SOBRE CERRADO CON NAVI (Tocar cualquier parte abre el sobre) */}
       {!sobreAbierto && (
         <div
           className={`transition-all duration-700 transform flex flex-col items-center justify-center relative
@@ -403,22 +403,22 @@ export default function InvitacionZelda() {
                   </div>
                 </div>
 
-                <span
+                <button
+                  type="button"
                   onClick={fotoAnterior}
                   aria-label="Foto anterior"
-                  style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
-                  className="cursor-pointer absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
+                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10094;
-                </span>
-                <span
+                </button>
+                <button
+                  type="button"
                   onClick={siguienteFoto}
                   aria-label="Siguiente foto"
-                  style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
-                  className="cursor-pointer absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold p-1"
+                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10095;
-                </span>
+                </button>
               </div>
 
               <div className="flex gap-2 mt-6">
@@ -512,24 +512,24 @@ export default function InvitacionZelda() {
                   <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
                     ¿Cuántos pases confirmas?
                   </label>
-                  <div className="flex items-center gap-4 bg-white/70 px-4 py-2 rounded-xl border border-[#8C6D46]/40 shadow-sm select-none">
-                    <span
+                  <div className="flex items-center gap-4 bg-white/70 px-4 py-2 rounded-xl border border-[#8C6D46]/40 shadow-sm">
+                    <button
+                      type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.max(1, prev - 1))}
-                      style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
-                      className="cursor-pointer w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       -
-                    </span>
+                    </button>
                     <span className="text-2xl font-bold text-[#1f4027] min-w-[2rem] text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>
                       {boletosSeleccionados}
                     </span>
-                    <span
+                    <button
+                      type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.min(totalAsignados, prev + 1))}
-                      style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
-                      className="cursor-pointer w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95"
+                      className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       +
-                    </span>
+                    </button>
                   </div>
                   <span className="text-xs text-[#8C6D46] mt-1.5 italic">
                     de un máximo de {totalAsignados} {totalAsignados === 1 ? 'pase' : 'pases'}
@@ -541,7 +541,7 @@ export default function InvitacionZelda() {
                 {invitado.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
                     <p className="font-bold italic text-xl drop-shadow-sm">
-                      ¡Misión Aceptada! Confirmaste {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? 'pase' : 'pases'}.
+                      ✨ ¡Misión Aceptada! Confirmaste {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? 'pase' : 'pases'}.
                     </p>
                   </div>
                 ) : invitado.estado === 'rechazado' ? (
@@ -568,7 +568,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES - BOTÓN VERDE ZELDA DEFINITIVO) */}
+            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
@@ -604,19 +604,18 @@ export default function InvitacionZelda() {
                 </div>
               )}
 
-              {/* Si llegó al límite de 3 */}
+              {/* Límite de 3 canciones */}
               {cancionesSugeridas.length >= 3 ? (
                 <div className="bg-[#1f4027]/10 border border-[#8C6D46]/40 p-4 rounded-xl max-w-sm mx-auto text-xs text-[#4A3B2C] font-semibold">
                   <p className="text-sm font-bold text-[#1f4027] mb-1">¡Has alcanzado el límite de 3 canciones!</p>
                   <p>Muchas gracias por compartir tus melodías favoritas para la fiesta.</p>
                 </div>
               ) : (
-                /* Formulario de búsqueda */
                 <div className="relative max-w-sm mx-auto flex flex-col gap-3">
+                  {/* Input de Búsqueda */}
                   <div className="relative w-full">
                     <input
                       type="text"
-                      autoComplete="off"
                       placeholder="Busca una canción o escribe su nombre..."
                       value={queryMusica}
                       onChange={(e) => {
@@ -655,23 +654,17 @@ export default function InvitacionZelda() {
                             </p>
                           </div>
                           {track.previewUrl && (
-                            <span
+                            <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 togglePreview(track.previewUrl);
                               }}
-                              style={{
-                                backgroundColor: '#1f4027',
-                                color: '#f4e8c1',
-                                border: '1px solid #c5a059',
-                                WebkitTapHighlightColor: 'transparent',
-                                userSelect: 'none'
-                              }}
-                              className="cursor-pointer select-none text-xs px-2.5 py-1 rounded-full font-bold shadow-sm flex-shrink-0 active:scale-95"
+                              className="text-xs bg-[#1f4027] text-white px-2.5 py-1 rounded-full hover:bg-[#2d5c38] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0"
                               title="Escuchar 30s"
                             >
                               ▶ 30s
-                            </span>
+                            </button>
                           )}
                         </div>
                       ))}
@@ -695,20 +688,14 @@ export default function InvitacionZelda() {
                         </p>
                       </div>
                       {cancionSeleccionada.previewUrl && (
-                        <span
+                        <button
+                          type="button"
                           onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
-                          style={{
-                            backgroundColor: '#1f4027',
-                            color: '#f4e8c1',
-                            border: '1px solid #c5a059',
-                            WebkitTapHighlightColor: 'transparent',
-                            userSelect: 'none'
-                          }}
-                          className="cursor-pointer select-none w-8 h-8 rounded-full shadow flex items-center justify-center text-sm font-bold flex-shrink-0 active:scale-95"
+                          className="w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition text-sm flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
                           title={previewSonando ? "Pausar" : "Escuchar muestra"}
                         >
                           {previewSonando ? "❚❚" : "▶"}
-                        </span>
+                        </button>
                       )}
                     </div>
                   )}
