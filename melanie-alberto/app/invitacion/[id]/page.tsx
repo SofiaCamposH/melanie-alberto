@@ -24,11 +24,11 @@ export default function InvitacionZelda() {
   const [invitado, setInvitado] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [errorInfo, setErrorInfo] = useState('');
-
+ 
   const [sobreAbierto, setSobreAbierto] = useState(false);
   const [animandoSobre, setAnimandoSobre] = useState(false);
   const [naviVolando, setNaviVolando] = useState(false);
-
+ 
   const audioRef = useRef<HTMLAudioElement>(null);
   const naviAudioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
@@ -138,9 +138,9 @@ export default function InvitacionZelda() {
   };
 
   const tocarNavi = () => {
-    if (naviVolando || sobreAbierto) return;
+    if (naviVolando) return;
     setNaviVolando(true);
-
+   
     if (naviAudioRef.current) {
       naviAudioRef.current.play().catch(e => console.log("Error reproduciendo Navi:", e));
     }
@@ -221,7 +221,7 @@ export default function InvitacionZelda() {
 
   const enviarCancion = async () => {
     if (cancionesSugeridas.length >= 3) {
-      return alert("Ya has alcanzado el límite máximo de 3 canciones.");
+      return alert("Has alcanzado el límite máximo de 3 melodías sugeridas.");
     }
     if (!queryMusica.trim()) return alert("Busca o escribe una canción primero.");
     setEnviandoCancion(true);
@@ -253,7 +253,7 @@ export default function InvitacionZelda() {
   };
 
   const siguienteFoto = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
-  const fotoAnterior = () => setFotoIndex((prev) => (prev === 0 ? fotos.length - 1 : prev - 1));
+  const fotoAnterior = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev - 1));
 
   if (cargando) return <div className="min-h-screen flex items-center justify-center text-white bg-black">Cargando...</div>;
   if (errorInfo) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{errorInfo}</div>;
@@ -272,21 +272,19 @@ export default function InvitacionZelda() {
         }}
       />
 
-      {/* VISTA 1: SOBRE CERRADO CON NAVI (Tocar cualquier parte abre el sobre) */}
+      {/* VISTA 1: SOBRE CERRADO CON NAVI (Clickeable en cualquier parte) */}
       {!sobreAbierto && (
         <div
-          className={`transition-all duration-700 transform flex flex-col items-center justify-center relative
+          onClick={tocarNavi}
+          className={`cursor-pointer transition-all duration-700 transform flex flex-col items-center justify-center relative
             ${animandoSobre ? '-translate-y-[100vh] opacity-0 scale-50' : 'translate-y-0 opacity-100 scale-100'}
           `}
           style={{ fontFamily: "'Textos', sans-serif" }}
         >
-          <div 
-            onClick={tocarNavi}
-            className="cursor-pointer bg-[#1f4027] w-80 h-48 sm:w-96 sm:h-64 relative border-4 border-[#c5a059] shadow-[0_0_30px_rgba(197,160,89,0.3)] text-[#c5a059]"
-          >
-            <div className="pointer-events-none absolute top-0 left-0 w-0 h-0 border-l-[156px] border-l-transparent border-r-[156px] border-r-transparent border-t-[100px] border-t-[#2d5c38] sm:border-l-[188px] sm:border-r-[188px] sm:border-t-[120px] opacity-90 z-10" />
-
-            <div className="pointer-events-none absolute bottom-6 sm:bottom-8 left-0 w-full z-20 text-center px-4">
+          <div className="bg-[#1f4027] w-80 h-48 sm:w-96 sm:h-64 relative border-4 border-[#c5a059] shadow-[0_0_30px_rgba(197,160,89,0.3)] text-[#c5a059]">
+            <div className="absolute top-0 left-0 w-0 h-0 border-l-[156px] border-l-transparent border-r-[156px] border-r-transparent border-t-[100px] border-t-[#2d5c38] sm:border-l-[188px] sm:border-r-[188px] sm:border-t-[120px] opacity-90 z-10" />
+           
+            <div className="absolute bottom-6 sm:bottom-8 left-0 w-full z-20 text-center px-4">
               <h3
                 className="text-4xl sm:text-5xl truncate font-normal"
                 style={{ fontFamily: "'Zelda', sans-serif" }}
@@ -295,7 +293,7 @@ export default function InvitacionZelda() {
               </h3>
             </div>
 
-            <div className="pointer-events-none absolute top-[100px] sm:top-[120px] left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
+            <div className="absolute top-[100px] sm:top-[120px] left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center pointer-events-none">
               <div
                 className={`transition-all duration-700 ease-in-out flex flex-col items-center
                   ${naviVolando ? '-translate-y-[60vh] translate-x-[20vw] scale-50 opacity-0' : 'animate-bounce hover:scale-110'}
@@ -303,7 +301,7 @@ export default function InvitacionZelda() {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-60 animate-pulse"></div>
-                  <img src="/navi.png" alt="Toca a Navi" className="w-16 h-16 sm:w-20 sm:h-20 relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                  <img src="/navi.png" alt="Toca para abrir" className="w-16 h-16 sm:w-20 sm:h-20 relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
                 </div>
               </div>
             </div>
@@ -327,7 +325,7 @@ export default function InvitacionZelda() {
           <div className="absolute inset-0 border-[12px] border-[#1f4027] pointer-events-none z-0"></div>
           <div className="absolute inset-[12px] border-[4px] border-[#c5a059] pointer-events-none z-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)]"></div>
           <div className="absolute inset-[24px] border border-[#8C6D46]/40 pointer-events-none z-0"></div>
-
+         
           <div className="absolute top-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-t-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute top-[16px] right-[16px] w-12 h-12 sm:w-16 sm:h-16 border-t-[6px] border-r-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute bottom-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
@@ -344,7 +342,7 @@ export default function InvitacionZelda() {
 
           {/* CONTENIDO PRINCIPAL */}
           <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-7 px-6 pt-0">
-
+           
             {/* 1. NOMBRES E INTRO */}
             <div className="flex flex-col items-center w-full text-center mt-1">
               <h1
@@ -368,7 +366,7 @@ export default function InvitacionZelda() {
             {/* 2. CONTADOR */}
             <div className="flex flex-col items-center justify-center w-full -mt-1">
               <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>Solo faltan:</h2>
-
+             
               <div className="flex justify-center gap-4 sm:gap-6 text-center w-full">
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.dias}</span>
@@ -395,7 +393,7 @@ export default function InvitacionZelda() {
             {/* 3. CARRUSEL */}
             <div className="w-full flex flex-col items-center pt-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
-
+             
               <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
                 <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
                   <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
@@ -431,7 +429,7 @@ export default function InvitacionZelda() {
             {/* 4. FECHA Y LUGAR */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
-
+             
               <div className="flex flex-col gap-5 text-lg text-[#4A3B2C] mb-6">
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Día del Evento</span>
@@ -461,7 +459,7 @@ export default function InvitacionZelda() {
             {/* 5. MESA DE REGALOS */}
             <div className="w-full text-center my-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
-
+             
               <p className="text-base text-[#4A3B2C] mb-4 px-4">
                 El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:
               </p>
@@ -483,7 +481,7 @@ export default function InvitacionZelda() {
               <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Código de Vestimenta</h2>
               <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">Formal</p>
               <p className="text-[#4A3B2C] text-lg font-semibold">El blanco se reserva para la novia.</p>
-
+             
               <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
 
@@ -492,7 +490,7 @@ export default function InvitacionZelda() {
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Confirmación de Asistencia
               </h2>
-
+             
               <p className="text-lg text-[#4A3B2C] font-semibold mb-1">Estamos emocionados de verte en nuestra boda.</p>
               <p className="text-base text-[#4A3B2C] mb-4">Entendemos si por algún motivo no pudieras acompañarnos. Te pedimos por favor que nos confirmes tu asistencia lo antes posible.</p>
 
@@ -502,7 +500,7 @@ export default function InvitacionZelda() {
                 </p>
                 <p className="text-sm text-[#4A3B2C] mt-1 font-semibold">Queremos que se relajen y disfruten de la fiesta al máximo.</p>
               </div>
-
+             
               <p className="text-lg font-semibold mb-3">
                 Hemos reservado <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? 'pase' : 'pases'} para ti, {invitado.nombre}.
               </p>
@@ -536,7 +534,7 @@ export default function InvitacionZelda() {
                   </span>
                 </div>
               )}
-
+             
               <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
                 {invitado.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
@@ -568,7 +566,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3 CANCIONES) */}
+            {/* 8. MELODÍAS (LÍMITE A 3 CANCIONES) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
@@ -582,9 +580,7 @@ export default function InvitacionZelda() {
                 <div className="max-w-sm mx-auto mb-4 text-left">
                   <p className="text-xs font-bold uppercase tracking-wider text-[#1f4027] mb-2 flex items-center justify-between">
                     <span>Tus sugerencias enviadas:</span>
-                    <span className="font-mono bg-[#1f4027]/10 px-2 py-0.5 rounded text-[11px]">
-                      {cancionesSugeridas.length} / 3
-                    </span>
+                    <span className="text-[#8C6D46]">{cancionesSugeridas.length} de 3</span>
                   </p>
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {cancionesSugeridas.map((item, idx) => (
@@ -604,11 +600,12 @@ export default function InvitacionZelda() {
                 </div>
               )}
 
-              {/* Límite de 3 canciones */}
+              {/* Formulario de búsqueda (Se bloquea al llegar a 3 canciones) */}
               {cancionesSugeridas.length >= 3 ? (
-                <div className="bg-[#1f4027]/10 border border-[#8C6D46]/40 p-4 rounded-xl max-w-sm mx-auto text-xs text-[#4A3B2C] font-semibold">
-                  <p className="text-sm font-bold text-[#1f4027] mb-1">¡Has alcanzado el límite de 3 canciones!</p>
-                  <p>Muchas gracias por compartir tus melodías favoritas para la fiesta.</p>
+                <div className="bg-[#2d5c38]/10 border border-[#2d5c38]/30 rounded-xl p-3 max-w-sm mx-auto">
+                  <p className="text-xs font-bold text-[#1f4027]">
+                    ✨ ¡Has completado tus 3 sugerencias musicales! Gracias por ayudarnos a armar la playlist.
+                  </p>
                 </div>
               ) : (
                 <div className="relative max-w-sm mx-auto flex flex-col gap-3">
@@ -638,7 +635,7 @@ export default function InvitacionZelda() {
                         <div
                           key={track.trackId}
                           onClick={() => seleccionarPista(track)}
-                          className="flex items-center gap-3 p-2.5 hover:bg-[#e8dcc4] cursor-pointer transition select-none"
+                          className="flex items-center gap-3 p-2.5 hover:bg-[#e8dcc4] cursor-pointer transition"
                         >
                           <img
                             src={track.artworkUrl100}
@@ -703,12 +700,12 @@ export default function InvitacionZelda() {
                   {/* Botón Enviar Canción */}
                   <button
                     onClick={enviarCancion}
-                    disabled={enviandoCancion || !queryMusica.trim()}
+                    disabled={enviandoCancion || !queryMusica.trim() || cancionesSugeridas.length >= 3}
                     className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-sm uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[3px_3px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] rounded-xl mt-1 w-full disabled:opacity-50 border-none outline-none focus:outline-none focus:ring-0"
                   >
                     {enviandoCancion ? 'Guardando...' : (
                       <>
-                        Agregar Melodía ({cancionesSugeridas.length + 1}/3) <span className="text-base leading-none">♫</span>
+                        Agregar Melodía ({cancionesSugeridas.length}/3) <span className="text-base leading-none">♫</span>
                       </>
                     )}
                   </button>
