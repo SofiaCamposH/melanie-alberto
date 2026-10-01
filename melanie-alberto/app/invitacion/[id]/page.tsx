@@ -128,7 +128,7 @@ export default function InvitacionZelda() {
   const cargarCancionesPrevias = async () => {
     const { data } = await supabase
       .from('canciones')
-      .select('titulo, artista')
+      .select('id, titulo, artista') // Obtenemos el ID para poder eliminarlas después
       .eq('invitado_id', id)
       .order('id', { ascending: true });
 
@@ -238,7 +238,8 @@ export default function InvitacionZelda() {
     ]);
 
     if (!error) {
-      setCancionesSugeridas(prev => [...prev, { titulo: tituloAEnviar, artista: artistaAEnviar }]);
+      // Recargamos desde la base de datos para asegurar tener el ID de la canción insertada
+      await cargarCancionesPrevias();
       setCancionSeleccionada(null);
       setQueryMusica('');
       if (previewAudioRef.current) {
@@ -252,6 +253,23 @@ export default function InvitacionZelda() {
     setEnviandoCancion(false);
   };
 
+  const eliminarCancion = async (cancionId?: string) => {
+    if (!cancionId) return;
+    const seguro = window.confirm("¿Estás seguro de que quieres eliminar esta canción de tus sugerencias?");
+    if (!seguro) return;
+
+    const { error } = await supabase
+      .from('canciones')
+      .delete()
+      .eq('id', cancionId);
+
+    if (!error) {
+      setCancionesSugeridas(prev => prev.filter(c => c.id !== cancionId));
+    } else {
+      alert("Error al eliminar la canción. Inténtalo de nuevo.");
+    }
+  };
+
   const siguienteFoto = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
   const fotoAnterior = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev - 1));
 
@@ -262,6 +280,15 @@ export default function InvitacionZelda() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
+      {/* Eliminación global de contornos/resplandores azules de foco o toque */}
+      <style>{`
+        *:focus, *:focus-visible, *:active {
+          outline: none !important;
+          -webkit-tap-highlight-color: transparent !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+
       <audio ref={audioRef} src="/musica.mp3" loop />
       <audio ref={naviAudioRef} src="/navi.mp3" preload="auto" />
       <audio
@@ -405,6 +432,7 @@ export default function InvitacionZelda() {
                   type="button"
                   onClick={fotoAnterior}
                   aria-label="Foto anterior"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                   className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10094;
@@ -413,6 +441,7 @@ export default function InvitacionZelda() {
                   type="button"
                   onClick={siguienteFoto}
                   aria-label="Siguiente foto"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                   className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
                   &#10095;
@@ -514,6 +543,7 @@ export default function InvitacionZelda() {
                     <button
                       type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.max(1, prev - 1))}
+                      style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       -
@@ -524,6 +554,7 @@ export default function InvitacionZelda() {
                     <button
                       type="button"
                       onClick={() => setBoletosSeleccionados(prev => Math.min(totalAsignados, prev + 1))}
+                      style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="w-8 h-8 rounded-full bg-[#1f4027] text-white font-bold flex items-center justify-center hover:bg-[#2d5c38] transition active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
                     >
                       +
@@ -551,12 +582,14 @@ export default function InvitacionZelda() {
                     <button
                       onClick={confirmarAsistencia}
                       disabled={guardandoConfirmacion}
+                      style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="bg-[#2d5c38] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] w-full sm:w-auto disabled:opacity-50"
                     >
                       {guardandoConfirmacion ? 'Confirmando...' : `Confirmar (${boletosSeleccionados} ${boletosSeleccionados === 1 ? 'pase' : 'pases'})`}
                     </button>
                     <button
                       onClick={rechazarAsistencia}
+                      style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#4A3B2C] w-full sm:w-auto"
                     >
                       No podré asistir
@@ -566,7 +599,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3 Y REPRODUCTOR CON ICONOS SVG PUROS) */}
+            {/* 8. MELODÍAS (MÁXIMO 3, REPRODUCTOR SVG Y ELIMINAR CANCIÓN) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 Melodías para la fiesta
@@ -575,7 +608,7 @@ export default function InvitacionZelda() {
                 ¿Qué canciones no pueden faltar en la pista? (Máximo 3 canciones por invitación)
               </p>
 
-              {/* Lista de canciones ya sugeridas */}
+              {/* Lista de canciones ya sugeridas con opción de borrar */}
               {cancionesSugeridas.length > 0 && (
                 <div className="max-w-sm mx-auto mb-4 text-left">
                   <p className="text-xs font-bold uppercase tracking-wider text-[#1f4027] mb-2 flex items-center justify-between">
@@ -585,15 +618,27 @@ export default function InvitacionZelda() {
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {cancionesSugeridas.map((item, idx) => (
                       <div
-                        key={idx}
-                        className="bg-[#f8f5eb]/90 px-3 py-1.5 rounded-lg border border-[#c5a059]/60 flex items-center justify-between text-xs"
+                        key={item.id || idx}
+                        className="bg-[#f8f5eb]/90 pl-3 pr-2 py-1.5 rounded-lg border border-[#c5a059]/60 flex items-center justify-between text-xs group"
                       >
-                        <span className="font-semibold text-[#1f4027] truncate pr-2">
-                          🎵 {item.titulo}
-                        </span>
-                        <span className="text-[#8C6D46] text-[11px] truncate flex-shrink-0">
-                          {item.artista}
-                        </span>
+                        <div className="flex items-center gap-2 mr-2 overflow-hidden">
+                          <span className="font-semibold text-[#1f4027] truncate">
+                            🎵 {item.titulo}
+                          </span>
+                          <span className="text-[#8C6D46] text-[11px] truncate flex-shrink-0">
+                            {item.artista}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => eliminarCancion(item.id)}
+                          className="text-[#8C6D46] hover:text-red-700 transition-colors p-1 flex-shrink-0 border-none outline-none focus:outline-none"
+                          title="Eliminar melodía"
+                        >
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                          </svg>
+                        </button>
                       </div>
                     ))}
                   </div>
