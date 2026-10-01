@@ -17,9 +17,137 @@ interface CancionSugerida {
   artista: string;
 }
 
+// Diccionario de Traducciones (i18n)
+const i18n = {
+  es: {
+    loading: "Cargando...",
+    notFound: "No se encontró la invitación.",
+    navHint: "Toca para abrir",
+    intro1: "Estás cordialmente invitado a celebrar nuestra boda",
+    intro2: "\"It's dangerous to go alone! Will you join us?\"",
+    timeRem: "Solo faltan:",
+    days: "Días", hrs: "Hrs", min: "Min", sec: "Seg",
+    us: "Nosotros",
+    dateLoc: "Lugar y Fecha",
+    eventDay: "Día del Evento",
+    date: "Viernes, 18 de Diciembre de 2026",
+    reception: "Recepción",
+    location: "Lugar",
+    hall: "Salon de eventos \"Gran Jardin\"",
+    address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
+    mapBtn: "Ver en el Mapa",
+    gifts: "Mesa de Regalos",
+    giftsText: "El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:",
+    dress: "Código de Vestimenta",
+    formal: "Formal",
+    whiteRes: "El blanco se reserva para la novia.",
+    rsvpTitle: "Confirmación de Asistencia",
+    rsvpExcited: "Estamos emocionados de verte en nuestra boda.",
+    rsvpUnderstand: "Entendemos si por algún motivo no pudieras acompañarnos. Te pedimos por favor que nos confirmes tu asistencia lo antes posible.",
+    adultsOnly: "Evento solo para adultos",
+    relax: "Queremos que se relajen y disfruten de la fiesta al máximo.",
+    reserved1: "Hemos reservado",
+    reserved2: "para ti",
+    pass: "pase",
+    passes: "pases",
+    howMany: "¿Cuántos pases confirmas?",
+    maxOf: "de un máximo de",
+    questAccepted: "✨ ¡Misión Aceptada! Confirmaste",
+    missYou: "Lamentamos que no puedas asistir. ¡Te extrañaremos!",
+    confirmBtn: "Confirmar",
+    confirmingBtn: "Confirmando...",
+    declineBtn: "No podré asistir",
+    melodiesTitle: "Melodías para la fiesta",
+    melodiesDesc: "¿Qué canciones no pueden faltar en la pista? (Máximo 3 canciones por invitación)",
+    suggestions: "Tus sugerencias enviadas:",
+    of: "de",
+    completedSongs: "✨ ¡Has completado tus 3 sugerencias musicales! Gracias por ayudarnos a armar la playlist.",
+    searchPlaceholder: "Busca una canción o escribe su nombre...",
+    searching: "Buscando...",
+    addMelody: "Agregar Melodía",
+    saving: "Guardando...",
+    remove: "Eliminar",
+    alerts: {
+      confirmSuccess: "¡Gracias por confirmar tu asistencia con",
+      confirmError: "Hubo un error al confirmar. Inténtalo de nuevo.",
+      declineSure: "¿Estás seguro de que no podrás acompañarnos?",
+      declineSuccess: "Lamentamos que no puedas acompañarnos. ¡Gracias por avisarnos!",
+      limitReached: "Has alcanzado el límite máximo de 3 melodías sugeridas.",
+      searchFirst: "Busca o escribe una canción primero.",
+      songError: "Error al enviar la sugerencia. Verifica tu conexión.",
+      songDelConfirm: "¿Estás seguro de que quieres eliminar esta canción de tus sugerencias?",
+      songDelError: "Error al eliminar la canción. Inténtalo de nuevo."
+    }
+  },
+  en: {
+    loading: "Loading...",
+    notFound: "Invitation not found.",
+    navHint: "Tap to open",
+    intro1: "You are cordially invited to celebrate our wedding",
+    intro2: "\"It's dangerous to go alone! Will you join us?\"",
+    timeRem: "Time remaining:",
+    days: "Days", hrs: "Hrs", min: "Min", sec: "Sec",
+    us: "Our Story",
+    dateLoc: "Time & Location",
+    eventDay: "Event Day",
+    date: "Friday, December 18, 2026",
+    reception: "Reception",
+    location: "Location",
+    hall: "Event Hall \"Gran Jardin\"",
+    address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
+    mapBtn: "View on Map",
+    gifts: "Gift Registry",
+    giftsText: "Your presence is our biggest gift, but if you wish to give us something, here are our official gift registries. Thank you for your love and support!:",
+    dress: "Dress Code",
+    formal: "Formal",
+    whiteRes: "White is reserved for the bride.",
+    rsvpTitle: "RSVP",
+    rsvpExcited: "We are so excited to see you at our wedding.",
+    rsvpUnderstand: "We understand if you cannot make it. Please let us know as soon as possible.",
+    adultsOnly: "Adults Only",
+    relax: "We want everyone to relax and enjoy the party to the fullest.",
+    reserved1: "We have reserved",
+    reserved2: "for you",
+    pass: "pass",
+    passes: "passes",
+    howMany: "How many passes are you confirming?",
+    maxOf: "out of a maximum of",
+    questAccepted: "✨ Quest Accepted! You confirmed",
+    missYou: "We are sorry you can't attend. We will miss you!",
+    confirmBtn: "Confirm",
+    confirmingBtn: "Confirming...",
+    declineBtn: "I won't be able to attend",
+    melodiesTitle: "Party Playlist",
+    melodiesDesc: "What songs are a must on the dance floor? (Max 3 songs per invitation)",
+    suggestions: "Your submitted suggestions:",
+    of: "of",
+    completedSongs: "✨ You've completed your 3 song suggestions! Thank you for helping us build the playlist.",
+    searchPlaceholder: "Search for a song or type its name...",
+    searching: "Searching...",
+    addMelody: "Add Melody",
+    saving: "Saving...",
+    remove: "Remove",
+    alerts: {
+      confirmSuccess: "Thank you for confirming your attendance with",
+      confirmError: "There was an error confirming. Please try again.",
+      declineSure: "Are you sure you won't be able to join us?",
+      declineSuccess: "We are sorry you can't join us. Thanks for letting us know!",
+      limitReached: "You have reached the maximum limit of 3 suggested melodies.",
+      searchFirst: "Search or type a song first.",
+      songError: "Error sending the suggestion. Check your connection.",
+      songDelConfirm: "Are you sure you want to remove this song from your suggestions?",
+      songDelError: "Error removing the song. Please try again."
+    }
+  }
+};
+
 export default function InvitacionZelda() {
   const params = useParams();
   const id = params.id as string;
+
+  // Estado del Idioma
+  const [lang, setLang] = useState<'es' | 'en'>('es');
+  const t = i18n[lang];
 
   const [invitado, setInvitado] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -34,11 +162,9 @@ export default function InvitacionZelda() {
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const contenidoRef = useRef<HTMLDivElement>(null);
 
-  // Manejo de boletos aceptados
   const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
   const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
 
-  // Estados del Buscador de iTunes y múltiples canciones
   const [queryMusica, setQueryMusica] = useState('');
   const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
   const [buscandoiTunes, setBuscandoiTunes] = useState(false);
@@ -82,7 +208,7 @@ export default function InvitacionZelda() {
     return () => clearInterval(intervalo);
   }, []);
 
-  // Búsqueda en iTunes Search API con Debounce
+  // Búsqueda en iTunes
   useEffect(() => {
     if (queryMusica.trim().length < 2) {
       setResultadosiTunes([]);
@@ -115,7 +241,7 @@ export default function InvitacionZelda() {
   const obtenerInvitado = async () => {
     const { data, error } = await supabase.from('invitados').select('*').eq('id', id).single();
     if (error || !data) {
-      setErrorInfo('No se encontró la invitación.');
+      setErrorInfo('error');
     } else {
       setInvitado(data);
       const asignados = Number(data.boletos_asignados) || 1;
@@ -128,7 +254,7 @@ export default function InvitacionZelda() {
   const cargarCancionesPrevias = async () => {
     const { data } = await supabase
       .from('canciones')
-      .select('id, titulo, artista') // Obtenemos el ID para poder eliminarlas después
+      .select('id, titulo, artista')
       .eq('invitado_id', id)
       .order('id', { ascending: true });
 
@@ -168,16 +294,16 @@ export default function InvitacionZelda() {
       .eq('id', id);
 
     if (!error) {
-      alert(`¡Gracias por confirmar tu asistencia con ${boletosSeleccionados} ${boletosSeleccionados === 1 ? 'pase' : 'pases'}!`);
+      alert(`${t.alerts.confirmSuccess} ${boletosSeleccionados} ${boletosSeleccionados === 1 ? t.pass : t.passes}!`);
       obtenerInvitado();
     } else {
-      alert("Hubo un error al confirmar. Inténtalo de nuevo.");
+      alert(t.alerts.confirmError);
     }
     setGuardandoConfirmacion(false);
   };
 
   const rechazarAsistencia = async () => {
-    const seguro = window.confirm("¿Estás seguro de que no podrás acompañarnos?");
+    const seguro = window.confirm(t.alerts.declineSure);
     if (seguro) {
       const { error } = await supabase
         .from('invitados')
@@ -188,13 +314,12 @@ export default function InvitacionZelda() {
         .eq('id', id);
 
       if (!error) {
-        alert("Lamentamos que no puedas acompañarnos. ¡Gracias por avisarnos!");
+        alert(t.alerts.declineSuccess);
         obtenerInvitado();
       }
     }
   };
 
-  // Manejo de Preview de Audio de iTunes
   const togglePreview = (url?: string) => {
     if (!url || !previewAudioRef.current) return;
 
@@ -221,9 +346,9 @@ export default function InvitacionZelda() {
 
   const enviarCancion = async () => {
     if (cancionesSugeridas.length >= 3) {
-      return alert("Has alcanzado el límite máximo de 3 melodías sugeridas.");
+      return alert(t.alerts.limitReached);
     }
-    if (!queryMusica.trim()) return alert("Busca o escribe una canción primero.");
+    if (!queryMusica.trim()) return alert(t.alerts.searchFirst);
     setEnviandoCancion(true);
 
     const tituloAEnviar = cancionSeleccionada ? cancionSeleccionada.trackName : queryMusica;
@@ -238,7 +363,6 @@ export default function InvitacionZelda() {
     ]);
 
     if (!error) {
-      // Recargamos desde la base de datos para asegurar tener el ID de la canción insertada
       await cargarCancionesPrevias();
       setCancionSeleccionada(null);
       setQueryMusica('');
@@ -248,14 +372,14 @@ export default function InvitacionZelda() {
       }
       if (audioRef.current) audioRef.current.volume = 0.5;
     } else {
-      alert("Error al enviar la sugerencia. Verifica tu conexión.");
+      alert(t.alerts.songError);
     }
     setEnviandoCancion(false);
   };
 
   const eliminarCancion = async (cancionId?: string) => {
     if (!cancionId) return;
-    const seguro = window.confirm("¿Estás seguro de que quieres eliminar esta canción de tus sugerencias?");
+    const seguro = window.confirm(t.alerts.songDelConfirm);
     if (!seguro) return;
 
     const { error } = await supabase
@@ -266,20 +390,37 @@ export default function InvitacionZelda() {
     if (!error) {
       setCancionesSugeridas(prev => prev.filter(c => c.id !== cancionId));
     } else {
-      alert("Error al eliminar la canción. Inténtalo de nuevo.");
+      alert(t.alerts.songDelError);
     }
   };
 
   const siguienteFoto = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
   const fotoAnterior = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev - 1));
 
-  if (cargando) return <div className="min-h-screen flex items-center justify-center text-white bg-black">Cargando...</div>;
-  if (errorInfo) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{errorInfo}</div>;
+  if (cargando) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{t.loading}</div>;
+  if (errorInfo) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{t.notFound}</div>;
 
   const totalAsignados = Number(invitado?.boletos_asignados) || 1;
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden relative">
+      
+      {/* Botón Flotante para cambiar idioma (i18n Toggle) */}
+      <div className="fixed top-4 right-4 z-50 flex gap-1 bg-[#1f4027]/90 p-1 rounded-full backdrop-blur-md border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.4)]">
+        <button 
+          onClick={() => setLang('es')}
+          className={`w-9 h-9 rounded-full text-xs font-bold transition-all duration-300 ${lang === 'es' ? 'bg-[#c5a059] text-[#1f4027] shadow-inner scale-105' : 'text-[#c5a059] hover:bg-[#c5a059]/20'}`}
+        >
+          ES
+        </button>
+        <button 
+          onClick={() => setLang('en')}
+          className={`w-9 h-9 rounded-full text-xs font-bold transition-all duration-300 ${lang === 'en' ? 'bg-[#c5a059] text-[#1f4027] shadow-inner scale-105' : 'text-[#c5a059] hover:bg-[#c5a059]/20'}`}
+        >
+          EN
+        </button>
+      </div>
+
       {/* Eliminación global de contornos/resplandores azules de foco o toque */}
       <style>{`
         *:focus, *:focus-visible, *:active {
@@ -303,7 +444,7 @@ export default function InvitacionZelda() {
       {!sobreAbierto && (
         <div
           onClick={tocarNavi}
-          className={`cursor-pointer transition-all duration-700 transform flex flex-col items-center justify-center relative
+          className={`cursor-pointer transition-all duration-700 transform flex flex-col items-center justify-center relative w-full h-full min-h-screen
             ${animandoSobre ? '-translate-y-[100vh] opacity-0 scale-50' : 'translate-y-0 opacity-100 scale-100'}
           `}
           style={{ fontFamily: "'Textos', sans-serif" }}
@@ -328,7 +469,7 @@ export default function InvitacionZelda() {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-60 animate-pulse"></div>
-                  <img src="/navi.png" alt="Toca para abrir" className="w-16 h-16 sm:w-20 sm:h-20 relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                  <img src="/navi.png" alt={t.navHint} className="w-16 h-16 sm:w-20 sm:h-20 relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
                 </div>
               </div>
             </div>
@@ -384,42 +525,42 @@ export default function InvitacionZelda() {
             </div>
 
             <div className="text-center bg-[#f4e8c1]/60 p-3.5 rounded-xl backdrop-blur-sm w-full max-w-sm">
-              <p className="text-base sm:text-lg mb-1 font-semibold">Estás cordialmente invitado a celebrar nuestra boda</p>
-              <p className="text-base sm:text-lg font-bold text-[#8C6D46]">"It's dangerous to go alone! Will you join us?"</p>
+              <p className="text-base sm:text-lg mb-1 font-semibold">{t.intro1}</p>
+              <p className="text-base sm:text-lg font-bold text-[#8C6D46]">{t.intro2}</p>
             </div>
 
             <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
 
             {/* 2. CONTADOR */}
             <div className="flex flex-col items-center justify-center w-full -mt-1">
-              <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>Solo faltan:</h2>
+              <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.timeRem}</h2>
              
               <div className="flex justify-center gap-4 sm:gap-6 text-center w-full">
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.dias}</span>
-                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">Días</span>
+                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">{t.days}</span>
                 </div>
                 <span className="text-3xl text-[#8C6D46] mt-2">:</span>
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.horas}</span>
-                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">Hrs</span>
+                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">{t.hrs}</span>
                 </div>
                 <span className="text-3xl text-[#8C6D46] mt-2">:</span>
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.minutos}</span>
-                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">Min</span>
+                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">{t.min}</span>
                 </div>
                 <span className="text-3xl text-[#8C6D46] mt-2">:</span>
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.segundos}</span>
-                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">Seg</span>
+                  <span className="text-xs uppercase tracking-widest text-[#8C6D46] font-bold mt-1">{t.sec}</span>
                 </div>
               </div>
             </div>
 
             {/* 3. CARRUSEL */}
             <div className="w-full flex flex-col items-center pt-2">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Nosotros</h2>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
              
               <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
                 <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
@@ -431,7 +572,7 @@ export default function InvitacionZelda() {
                 <button
                   type="button"
                   onClick={fotoAnterior}
-                  aria-label="Foto anterior"
+                  aria-label="Anterior"
                   style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                   className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
@@ -440,7 +581,7 @@ export default function InvitacionZelda() {
                 <button
                   type="button"
                   onClick={siguienteFoto}
-                  aria-label="Siguiente foto"
+                  aria-label="Siguiente"
                   style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                   className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
                 >
@@ -457,21 +598,21 @@ export default function InvitacionZelda() {
 
             {/* 4. FECHA Y LUGAR */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Lugar y Fecha</h2>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dateLoc}</h2>
              
               <div className="flex flex-col gap-5 text-lg text-[#4A3B2C] mb-6">
                 <div className="flex flex-col items-center justify-center">
-                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Día del Evento</span>
-                  <p className="font-semibold text-xl">Viernes, 18 de Diciembre de 2026</p>
+                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.eventDay}</span>
+                  <p className="font-semibold text-xl">{t.date}</p>
                 </div>
                 <div className="flex flex-col items-center justify-center">
-                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Recepción</span>
+                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.reception}</span>
                   <p className="font-semibold text-xl">18:00 hrs</p>
                 </div>
                 <div className="flex flex-col items-center justify-center mt-1">
-                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">Lugar</span>
-                  <p className="font-bold text-2xl text-[#1f4027]">Salon de eventos "Gran Jardin"</p>
-                  <p className="text-base mt-1">Adolfo López Mateos 203, Trojes de San Cristóbal</p>
+                  <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.location}</span>
+                  <p className="font-bold text-2xl text-[#1f4027]">{t.hall}</p>
+                  <p className="text-base mt-1">{t.address}</p>
                 </div>
               </div>
 
@@ -481,16 +622,16 @@ export default function InvitacionZelda() {
                 rel="noopener noreferrer"
                 className="inline-block bg-[#1f4027] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#2d5c38] transition shadow-[4px_4px_0px_0px_rgba(140,109,70,1)] border border-[#8C6D46]"
               >
-                Ver en el Mapa
+                {t.mapBtn}
               </a>
             </div>
 
             {/* 5. MESA DE REGALOS */}
             <div className="w-full text-center my-2">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Mesa de Regalos</h2>
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.gifts}</h2>
              
               <p className="text-base text-[#4A3B2C] mb-4 px-4">
-                El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:
+                {t.giftsText}
               </p>
 
               <div className="flex justify-center gap-6 my-6">
@@ -507,9 +648,9 @@ export default function InvitacionZelda() {
 
             {/* 6. CÓDIGO DE VESTIMENTA */}
             <div className="w-full text-center my-2">
-              <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>Código de Vestimenta</h2>
-              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">Formal</p>
-              <p className="text-[#4A3B2C] text-lg font-semibold">El blanco se reserva para la novia.</p>
+              <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dress}</h2>
+              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">{t.formal}</p>
+              <p className="text-[#4A3B2C] text-lg font-semibold">{t.whiteRes}</p>
              
               <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
@@ -517,27 +658,27 @@ export default function InvitacionZelda() {
             {/* 7. CONFIRMACIÓN DE ASISTENCIA */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
-                Confirmación de Asistencia
+                {t.rsvpTitle}
               </h2>
              
-              <p className="text-lg text-[#4A3B2C] font-semibold mb-1">Estamos emocionados de verte en nuestra boda.</p>
-              <p className="text-base text-[#4A3B2C] mb-4">Entendemos si por algún motivo no pudieras acompañarnos. Te pedimos por favor que nos confirmes tu asistencia lo antes posible.</p>
+              <p className="text-lg text-[#4A3B2C] font-semibold mb-1">{t.rsvpExcited}</p>
+              <p className="text-base text-[#4A3B2C] mb-4">{t.rsvpUnderstand}</p>
 
               <div className="my-4 py-3 border-y-2 border-[#8C6D46]/40 bg-[#e8dcc4]/50">
                 <p className="text-3xl sm:text-4xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
-                  Evento solo para adultos
+                  {t.adultsOnly}
                 </p>
-                <p className="text-sm text-[#4A3B2C] mt-1 font-semibold">Queremos que se relajen y disfruten de la fiesta al máximo.</p>
+                <p className="text-sm text-[#4A3B2C] mt-1 font-semibold">{t.relax}</p>
               </div>
              
               <p className="text-lg font-semibold mb-3">
-                Hemos reservado <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? 'pase' : 'pases'} para ti, {invitado.nombre}.
+                {t.reserved1} <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? t.pass : t.passes} {t.reserved2}, {invitado.nombre}.
               </p>
 
               {invitado.estado !== 'confirmado' && invitado.estado !== 'rechazado' && totalAsignados > 1 && (
                 <div className="mb-5 flex flex-col items-center">
                   <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
-                    ¿Cuántos pases confirmas?
+                    {t.howMany}
                   </label>
                   <div className="flex items-center gap-4 bg-white/70 px-4 py-2 rounded-xl border border-[#8C6D46]/40 shadow-sm">
                     <button
@@ -561,7 +702,7 @@ export default function InvitacionZelda() {
                     </button>
                   </div>
                   <span className="text-xs text-[#8C6D46] mt-1.5 italic">
-                    de un máximo de {totalAsignados} {totalAsignados === 1 ? 'pase' : 'pases'}
+                    {t.maxOf} {totalAsignados} {totalAsignados === 1 ? t.pass : t.passes}
                   </span>
                 </div>
               )}
@@ -570,12 +711,12 @@ export default function InvitacionZelda() {
                 {invitado.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
                     <p className="font-bold italic text-xl drop-shadow-sm">
-                      ✨ ¡Misión Aceptada! Confirmaste {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? 'pase' : 'pases'}.
+                      {t.questAccepted} {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? t.pass : t.passes}.
                     </p>
                   </div>
                 ) : invitado.estado === 'rechazado' ? (
                   <div className="bg-[#4A3B2C] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
-                    <p className="font-bold italic text-xl drop-shadow-sm">Lamentamos que no puedas asistir. ¡Te extrañaremos!</p>
+                    <p className="font-bold italic text-xl drop-shadow-sm">{t.missYou}</p>
                   </div>
                 ) : (
                   <>
@@ -585,14 +726,14 @@ export default function InvitacionZelda() {
                       style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="bg-[#2d5c38] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] w-full sm:w-auto disabled:opacity-50"
                     >
-                      {guardandoConfirmacion ? 'Confirmando...' : `Confirmar (${boletosSeleccionados} ${boletosSeleccionados === 1 ? 'pase' : 'pases'})`}
+                      {guardandoConfirmacion ? t.confirmingBtn : `${t.confirmBtn} (${boletosSeleccionados} ${boletosSeleccionados === 1 ? t.pass : t.passes})`}
                     </button>
                     <button
                       onClick={rechazarAsistencia}
                       style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
                       className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-4 font-bold text-lg uppercase tracking-widest hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(74,59,44,0.8)] border border-[#4A3B2C] w-full sm:w-auto"
                     >
-                      No podré asistir
+                      {t.declineBtn}
                     </button>
                   </>
                 )}
@@ -602,18 +743,18 @@ export default function InvitacionZelda() {
             {/* 8. MELODÍAS (MÁXIMO 3, REPRODUCTOR SVG Y ELIMINAR CANCIÓN) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
-                Melodías para la fiesta
+                {t.melodiesTitle}
               </h3>
               <p className="text-sm text-[#4A3B2C] mb-4 font-semibold">
-                ¿Qué canciones no pueden faltar en la pista? (Máximo 3 canciones por invitación)
+                {t.melodiesDesc}
               </p>
 
               {/* Lista de canciones ya sugeridas con opción de borrar */}
               {cancionesSugeridas.length > 0 && (
                 <div className="max-w-sm mx-auto mb-4 text-left">
                   <p className="text-xs font-bold uppercase tracking-wider text-[#1f4027] mb-2 flex items-center justify-between">
-                    <span>Tus sugerencias enviadas:</span>
-                    <span className="text-[#8C6D46]">{cancionesSugeridas.length} de 3</span>
+                    <span>{t.suggestions}</span>
+                    <span className="text-[#8C6D46]">{cancionesSugeridas.length} {t.of} 3</span>
                   </p>
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
                     {cancionesSugeridas.map((item, idx) => (
@@ -633,7 +774,7 @@ export default function InvitacionZelda() {
                           type="button"
                           onClick={() => eliminarCancion(item.id)}
                           className="text-[#8C6D46] hover:text-red-700 transition-colors p-1 flex-shrink-0 border-none outline-none focus:outline-none"
-                          title="Eliminar melodía"
+                          title={t.remove}
                         >
                           <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -649,7 +790,7 @@ export default function InvitacionZelda() {
               {cancionesSugeridas.length >= 3 ? (
                 <div className="bg-[#2d5c38]/10 border border-[#2d5c38]/30 rounded-xl p-3 max-w-sm mx-auto">
                   <p className="text-xs font-bold text-[#1f4027]">
-                    ✨ ¡Has completado tus 3 sugerencias musicales! Gracias por ayudarnos a armar la playlist.
+                    {t.completedSongs}
                   </p>
                 </div>
               ) : (
@@ -658,7 +799,7 @@ export default function InvitacionZelda() {
                   <div className="relative w-full">
                     <input
                       type="text"
-                      placeholder="Busca una canción o escribe su nombre..."
+                      placeholder={t.searchPlaceholder}
                       value={queryMusica}
                       onChange={(e) => {
                         setQueryMusica(e.target.value);
@@ -668,7 +809,7 @@ export default function InvitacionZelda() {
                     />
                     {buscandoiTunes && (
                       <span className="absolute right-3 top-3 text-xs text-[#8C6D46] animate-pulse">
-                        Buscando...
+                        {t.searching}
                       </span>
                     )}
                   </div>
@@ -703,7 +844,7 @@ export default function InvitacionZelda() {
                                 togglePreview(track.previewUrl);
                               }}
                               className="w-8 h-8 rounded-full bg-[#1f4027] text-white flex items-center justify-center hover:bg-[#2d5c38] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
-                              title="Escuchar muestra"
+                              title="Play"
                             >
                               {previewSonando && previewAudioRef.current?.src === track.previewUrl ? (
                                 <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
@@ -742,7 +883,7 @@ export default function InvitacionZelda() {
                           type="button"
                           onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
                           className="w-8 h-8 rounded-full bg-[#8C6D46] text-white flex items-center justify-center hover:bg-[#1f4027] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
-                          title={previewSonando ? "Pausar" : "Escuchar muestra"}
+                          title="Play/Pause"
                         >
                           {previewSonando ? (
                             <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
@@ -764,9 +905,9 @@ export default function InvitacionZelda() {
                     disabled={enviandoCancion || !queryMusica.trim() || cancionesSugeridas.length >= 3}
                     className="flex items-center justify-center gap-2 bg-[#2d5c38] text-[#f4e8c1] px-6 py-3 font-bold text-sm uppercase tracking-widest hover:bg-[#1f4027] transition shadow-[3px_3px_0px_0px_rgba(74,59,44,0.8)] border border-[#c5a059] rounded-xl mt-1 w-full disabled:opacity-50 border-none outline-none focus:outline-none focus:ring-0"
                   >
-                    {enviandoCancion ? 'Guardando...' : (
+                    {enviandoCancion ? t.saving : (
                       <>
-                        Agregar Melodía ({cancionesSugeridas.length}/3) <span className="text-base leading-none">♫</span>
+                        {t.addMelody} ({cancionesSugeridas.length}/3) <span className="text-base leading-none">♫</span>
                       </>
                     )}
                   </button>
