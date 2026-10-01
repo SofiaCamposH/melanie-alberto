@@ -48,10 +48,12 @@ export default function DashboardClient() {
   const [loadingCanciones, setLoadingCanciones] = useState(false);
   const [busquedaCancion, setBusquedaCancion] = useState('');
 
-  // Modal para agregar invitado manual
+  // Modal para agregar/editar invitado manual
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [invitadoEditando, setInvitadoEditando] = useState<Invitado | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoTelefono, setNuevoTelefono] = useState('');
+  const [codigoPais, setCodigoPais] = useState('+52'); // +52 Predeterminado
   const [nuevosBoletos, setNuevosBoletos] = useState(2);
   const [guardandoManual, setGuardandoManual] = useState(false);
 
@@ -154,6 +156,55 @@ export default function DashboardClient() {
     }
   };
 
+  const eliminarInvitado = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este invitado? Esta acción no se puede deshacer y eliminará sus canciones sugeridas.')) return;
+    try {
+      const { error } = await supabase.from('invitados').delete().eq('id', id);
+      if (error) throw error;
+      cargarInvitados();
+      cargarCanciones(); // Actualizamos porque pudieron borrarse sus canciones (si hay cascade)
+    } catch (err: any) {
+      alert('Error al eliminar el invitado: ' + err.message);
+    }
+  };
+
+  const abrirModalAgregar = () => {
+    setInvitadoEditando(null);
+    setNuevoNombre('');
+    setNuevoTelefono('');
+    setCodigoPais('+52');
+    setNuevosBoletos(2);
+    setModalAbierto(true);
+  };
+
+  const abrirModalEditar = (inv: Invitado) => {
+    setInvitadoEditando(inv);
+    setNuevoNombre(inv.nombre);
+    setNuevosBoletos(inv.boletos_asignados);
+    
+    // Parseo básico de código de país existente
+    let phone = inv.telefono || '';
+    let code = '+52';
+    
+    if (phone.startsWith('+52')) {
+      code = '+52';
+      phone = phone.substring(3);
+    } else if (phone.startsWith('52') && phone.length >= 12) {
+      code = '+52';
+      phone = phone.substring(2);
+    } else if (phone.startsWith('+1')) {
+      code = '+1';
+      phone = phone.substring(2);
+    } else if (phone.startsWith('1') && phone.length === 11) {
+      code = '+1';
+      phone = phone.substring(1);
+    }
+
+    setCodigoPais(code);
+    setNuevoTelefono(phone);
+    setModalAbierto(true);
+  };
+
   const handleGuardarManual = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoNombre.trim()) {
@@ -163,25 +214,42 @@ export default function DashboardClient() {
 
     setGuardandoManual(true);
     try {
-      const { error } = await supabase.from('invitados').insert([
-        {
-          nombre: nuevoNombre.trim(),
-          telefono: nuevoTelefono.trim() || null,
-          boletos_asignados: Number(nuevosBoletos) || 1,
-          estado: 'pendiente',
-          boletos_aceptados: null,
-        },
-      ]);
+      let telefonoAGuardar = null;
+      if (nuevoTelefono.trim()) {
+        const cleanPhone = nuevoTelefono.trim().replace(/\D/g, '');
+        const cleanCode = codigoPais.replace(/\D/g, '');
+        telefonoAGuardar = `+${cleanCode}${cleanPhone}`;
+      }
 
-      if (error) throw error;
+      if (invitadoEditando) {
+        // ACTUALIZAR
+        const { error } = await supabase
+          .from('invitados')
+          .update({
+            nombre: nuevoNombre.trim(),
+            telefono: telefonoAGuardar,
+            boletos_asignados: Number(nuevosBoletos) || 1,
+          })
+          .eq('id', invitadoEditando.id);
+        if (error) throw error;
+      } else {
+        // CREAR
+        const { error } = await supabase.from('invitados').insert([
+          {
+            nombre: nuevoNombre.trim(),
+            telefono: telefonoAGuardar,
+            boletos_asignados: Number(nuevosBoletos) || 1,
+            estado: 'pendiente',
+            boletos_aceptados: null,
+          },
+        ]);
+        if (error) throw error;
+      }
 
-      setNuevoNombre('');
-      setNuevoTelefono('');
-      setNuevosBoletos(2);
       setModalAbierto(false);
       cargarInvitados();
     } catch (err: any) {
-      alert('Error al agregar el invitado: ' + err.message);
+      alert(`Error al ${invitadoEditando ? 'actualizar' : 'agregar'} el invitado: ` + err.message);
     } finally {
       setGuardandoManual(false);
     }
@@ -441,7 +509,7 @@ export default function DashboardClient() {
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <button
-                  onClick={() => setModalAbierto(true)}
+                  onClick={abrirModalAgregar}
                   className="inline-flex items-center px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium shadow-sm transition"
                 >
                   + Agregar Invitado
@@ -591,28 +659,43 @@ export default function DashboardClient() {
                             <td className="py-3.5 px-4 text-slate-600 font-semibold">
                               {est === 'confirmado'
                                 ? (boletosAceptados !== null && boletosAceptados !== undefined
-                                    ? `${boletosAceptados} ${boletosAceptados === 1 ? 'pase' : 'pases'}`
-                                    : `${boletosAsignados} ${boletosAsignados === 1 ? 'pase' : 'pases'}`)
+                                  ? `${boletosAceptados} ${boletosAceptados === 1 ? 'pase' : 'pases'}`
+                                  : `${boletosAsignados} ${boletosAsignados === 1 ? 'pase' : 'pases'}`)
                                 : '-'}
                             </td>
                             <td className="py-3.5 px-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
                                 <button
                                   onClick={() => enviarWhatsApp(inv)}
-                                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+                                  className="inline-flex items-center gap-1 text-xs px-2 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
                                   title="Enviar invitación por WhatsApp"
                                 >
-                                   WhatsApp
+                                  WhatsApp
                                 </button>
                                 <button
                                   onClick={() => copiarEnlace(inv.id)}
-                                  className={`text-xs px-2.5 py-1.5 rounded border transition ${
+                                  className={`text-xs px-2 py-1.5 rounded border transition ${
                                     copiadoId === inv.id
                                       ? 'bg-emerald-600 border-emerald-600 text-white'
                                       : 'border-slate-300 text-slate-600 hover:bg-slate-100'
                                   }`}
+                                  title="Copiar link"
                                 >
-                                  {copiadoId === inv.id ? '¡Copiado!' : 'Copiar link'}
+                                  {copiadoId === inv.id ? '¡Copiado!' : 'Copiar'}
+                                </button>
+                                <button
+                                  onClick={() => abrirModalEditar(inv)}
+                                  className="text-xs px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+                                  title="Editar Invitado"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => eliminarInvitado(inv.id)}
+                                  className="text-xs px-2 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                                  title="Eliminar Invitado"
+                                >
+                                  🗑️
                                 </button>
                               </div>
                             </td>
@@ -707,12 +790,14 @@ export default function DashboardClient() {
         )}
       </div>
 
-      {/* Modal para Agregar Invitado Manual */}
+      {/* Modal para Agregar/Editar Invitado Manual */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-slate-800">Agregar Nuevo Invitado</h3>
+              <h3 className="text-lg font-bold text-slate-800">
+                {invitadoEditando ? 'Editar Invitado' : 'Agregar Nuevo Invitado'}
+              </h3>
               <button
                 onClick={() => setModalAbierto(false)}
                 className="text-slate-400 hover:text-slate-600 text-xl font-bold"
@@ -740,14 +825,24 @@ export default function DashboardClient() {
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                   Teléfono (WhatsApp)
                 </label>
-                <input
-                  type="tel"
-                  value={nuevoTelefono}
-                  onChange={(e) => setNuevoTelefono(e.target.value)}
-                  placeholder="Ej. 524491234567"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
-                />
-                <span className="text-xs text-slate-400">Opcional. Incluye código de país si es posible.</span>
+                <div className="flex gap-2">
+                  <select
+                    value={codigoPais}
+                    onChange={(e) => setCodigoPais(e.target.value)}
+                    className="w-28 px-2 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027] bg-white cursor-pointer"
+                  >
+                    <option value="+52">🇲🇽 +52</option>
+                    <option value="+1">🇺🇸 / 🇨🇦 +1</option>
+                  </select>
+                  <input
+                    type="tel"
+                    value={nuevoTelefono}
+                    onChange={(e) => setNuevoTelefono(e.target.value)}
+                    placeholder="Ej. 4491234567"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
+                  />
+                </div>
+                <span className="text-xs text-slate-400 mt-1 block">Opcional. Se usará para enviar el enlace por WhatsApp.</span>
               </div>
 
               <div>
@@ -778,7 +873,7 @@ export default function DashboardClient() {
                   disabled={guardandoManual}
                   className="px-4 py-2 bg-[#1f4027] hover:bg-[#16301d] text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50"
                 >
-                  {guardandoManual ? 'Guardando...' : 'Guardar Invitado'}
+                  {guardandoManual ? 'Guardando...' : invitadoEditando ? 'Actualizar' : 'Guardar Invitado'}
                 </button>
               </div>
             </form>
