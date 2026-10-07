@@ -32,6 +32,7 @@ const i18n = {
     eventDay: "Día del Evento",
     date: "Viernes, 18 de Diciembre de 2026",
     reception: "Recepción",
+    endTime: "(El evento concluye a las 22:30 hrs)",
     location: "Lugar",
     hall: "Salon de eventos \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
@@ -92,6 +93,7 @@ const i18n = {
     eventDay: "Event Day",
     date: "Friday, December 18, 2026",
     reception: "Reception",
+    endTime: "(The event concludes at 10:30 PM)",
     location: "Location",
     hall: "Event Hall \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
@@ -152,11 +154,11 @@ export default function InvitacionZelda() {
   const [invitado, setInvitado] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [errorInfo, setErrorInfo] = useState('');
- 
+  
   const [sobreAbierto, setSobreAbierto] = useState(false);
   const [animandoSobre, setAnimandoSobre] = useState(false);
   const [naviVolando, setNaviVolando] = useState(false);
- 
+  
   const audioRef = useRef<HTMLAudioElement>(null);
   const naviAudioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
@@ -186,7 +188,9 @@ export default function InvitacionZelda() {
   }, [id]);
 
   useEffect(() => {
-    const fechaBoda = new Date('2026-12-18T18:00:00').getTime();
+    // CORRECCIÓN DEL TEMPORIZADOR: Usando un formato seguro (Año, Mes-1, Día, Hora, Minuto, Segundo)
+    // El mes va de 0 a 11, por lo que Diciembre es 11
+    const fechaBoda = new Date(2026, 11, 18, 18, 0, 0).getTime();
 
     const intervalo = setInterval(() => {
       const ahora = new Date().getTime();
@@ -199,7 +203,7 @@ export default function InvitacionZelda() {
         setFaltan({
           dias: Math.floor(distancia / (1000 * 60 * 60 * 24)),
           horas: Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutos: Math.floor((distancia % (1000 * 60)) / (1000 * 60)),
+          minutos: Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60)),
           segundos: Math.floor((distancia % (1000 * 60)) / 1000),
         });
       }
@@ -266,7 +270,7 @@ export default function InvitacionZelda() {
   const tocarNavi = () => {
     if (naviVolando) return;
     setNaviVolando(true);
-   
+    
     if (naviAudioRef.current) {
       naviAudioRef.current.play().catch(e => console.log("Error reproduciendo Navi:", e));
     }
@@ -394,8 +398,9 @@ export default function InvitacionZelda() {
     }
   };
 
+  // CORRECCIÓN DEL CARRUSEL: Evitar índices negativos al regresar foto
   const siguienteFoto = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
-  const fotoAnterior = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev - 1));
+  const fotoAnterior = () => setFotoIndex((prev) => (prev === 0 ? fotos.length - 1 : prev - 1));
 
   if (cargando) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{t.loading}</div>;
   if (errorInfo) return <div className="min-h-screen flex items-center justify-center text-white bg-black">{t.notFound}</div>;
@@ -421,7 +426,6 @@ export default function InvitacionZelda() {
         </button>
       </div>
 
-      {/* Eliminación global de contornos/resplandores azules de foco o toque */}
       <style>{`
         *:focus, *:focus-visible, *:active {
           outline: none !important;
@@ -451,7 +455,7 @@ export default function InvitacionZelda() {
         >
           <div className="bg-[#1f4027] w-80 h-48 sm:w-96 sm:h-64 relative border-4 border-[#c5a059] shadow-[0_0_30px_rgba(197,160,89,0.3)] text-[#c5a059]">
             <div className="absolute top-0 left-0 w-0 h-0 border-l-[156px] border-l-transparent border-r-[156px] border-r-transparent border-t-[100px] border-t-[#2d5c38] sm:border-l-[188px] sm:border-r-[188px] sm:border-t-[120px] opacity-90 z-10" />
-           
+            
             <div className="absolute bottom-6 sm:bottom-8 left-0 w-full z-20 text-center px-4">
               <h3
                 className="text-4xl sm:text-5xl truncate font-normal"
@@ -493,7 +497,7 @@ export default function InvitacionZelda() {
           <div className="absolute inset-0 border-[12px] border-[#1f4027] pointer-events-none z-0"></div>
           <div className="absolute inset-[12px] border-[4px] border-[#c5a059] pointer-events-none z-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)]"></div>
           <div className="absolute inset-[24px] border border-[#8C6D46]/40 pointer-events-none z-0"></div>
-         
+          
           <div className="absolute top-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-t-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute top-[16px] right-[16px] w-12 h-12 sm:w-16 sm:h-16 border-t-[6px] border-r-[6px] border-[#c5a059] pointer-events-none z-0"></div>
           <div className="absolute bottom-[16px] left-[16px] w-12 h-12 sm:w-16 sm:h-16 border-b-[6px] border-l-[6px] border-[#c5a059] pointer-events-none z-0"></div>
@@ -510,7 +514,7 @@ export default function InvitacionZelda() {
 
           {/* CONTENIDO PRINCIPAL */}
           <div ref={contenidoRef} className="relative z-10 w-full flex flex-col items-center space-y-7 px-6 pt-0">
-           
+            
             {/* 1. NOMBRES E INTRO */}
             <div className="flex flex-col items-center w-full text-center mt-1">
               <h1
@@ -534,7 +538,7 @@ export default function InvitacionZelda() {
             {/* 2. CONTADOR */}
             <div className="flex flex-col items-center justify-center w-full -mt-1">
               <h2 className="text-3xl sm:text-4xl text-[#1f4027] mb-3 drop-shadow-sm text-center" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.timeRem}</h2>
-             
+              
               <div className="flex justify-center gap-4 sm:gap-6 text-center w-full">
                 <div className="flex flex-col items-center">
                   <span className="text-4xl sm:text-5xl text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{faltan.dias}</span>
@@ -561,7 +565,7 @@ export default function InvitacionZelda() {
             {/* 3. CARRUSEL */}
             <div className="w-full flex flex-col items-center pt-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
-             
+              
               <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
                 <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
                   <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
@@ -599,15 +603,17 @@ export default function InvitacionZelda() {
             {/* 4. FECHA Y LUGAR */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dateLoc}</h2>
-             
+              
               <div className="flex flex-col gap-5 text-lg text-[#4A3B2C] mb-6">
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.eventDay}</span>
                   <p className="font-semibold text-xl">{t.date}</p>
                 </div>
+                {/* Aquí agregamos sutilmente el término de recepción */}
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.reception}</span>
                   <p className="font-semibold text-xl">18:00 hrs</p>
+                  <p className="text-sm text-[#8C6D46] italic font-medium mt-0.5">{t.endTime}</p>
                 </div>
                 <div className="flex flex-col items-center justify-center mt-1">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.location}</span>
@@ -629,7 +635,7 @@ export default function InvitacionZelda() {
             {/* 5. MESA DE REGALOS */}
             <div className="w-full text-center my-2">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.gifts}</h2>
-             
+              
               <p className="text-base text-[#4A3B2C] mb-4 px-4">
                 {t.giftsText}
               </p>
@@ -651,7 +657,7 @@ export default function InvitacionZelda() {
               <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dress}</h2>
               <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">{t.formal}</p>
               <p className="text-[#4A3B2C] text-lg font-semibold">{t.whiteRes}</p>
-             
+              
               <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
 
@@ -660,7 +666,7 @@ export default function InvitacionZelda() {
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 {t.rsvpTitle}
               </h2>
-             
+              
               <p className="text-lg text-[#4A3B2C] font-semibold mb-1">{t.rsvpExcited}</p>
               <p className="text-base text-[#4A3B2C] mb-4">{t.rsvpUnderstand}</p>
 
@@ -670,12 +676,12 @@ export default function InvitacionZelda() {
                 </p>
                 <p className="text-sm text-[#4A3B2C] mt-1 font-semibold">{t.relax}</p>
               </div>
-             
+              
               <p className="text-lg font-semibold mb-3">
-                {t.reserved1} <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? t.pass : t.passes} {t.reserved2}, {invitado.nombre}.
+                {t.reserved1} <strong className="text-2xl text-[#8C6D46]">{totalAsignados}</strong> {totalAsignados === 1 ? t.pass : t.passes} {t.reserved2}, {invitado?.nombre}.
               </p>
 
-              {invitado.estado !== 'confirmado' && invitado.estado !== 'rechazado' && totalAsignados > 1 && (
+              {invitado?.estado !== 'confirmado' && invitado?.estado !== 'rechazado' && totalAsignados > 1 && (
                 <div className="mb-5 flex flex-col items-center">
                   <label className="text-sm font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
                     {t.howMany}
@@ -706,15 +712,15 @@ export default function InvitacionZelda() {
                   </span>
                 </div>
               )}
-             
+              
               <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
-                {invitado.estado === 'confirmado' ? (
+                {invitado?.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
                     <p className="font-bold italic text-xl drop-shadow-sm">
                       {t.questAccepted} {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? t.pass : t.passes}.
                     </p>
                   </div>
-                ) : invitado.estado === 'rechazado' ? (
+                ) : invitado?.estado === 'rechazado' ? (
                   <div className="bg-[#4A3B2C] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
                     <p className="font-bold italic text-xl drop-shadow-sm">{t.missYou}</p>
                   </div>
