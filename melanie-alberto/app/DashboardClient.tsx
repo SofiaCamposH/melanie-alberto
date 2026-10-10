@@ -58,6 +58,13 @@ export default function DashboardClient() {
   const [nuevosBoletos, setNuevosBoletos] = useState(2);
   const [guardandoManual, setGuardandoManual] = useState(false);
 
+  // Modal para agregar canciones desde el Panel (Sin límites)
+  const [modalCancionAbierto, setModalCancionAbierto] = useState(false);
+  const [nuevaCancionTitulo, setNuevaCancionTitulo] = useState('');
+  const [nuevaCancionArtista, setNuevaCancionArtista] = useState('');
+  const [cancionInvitadoId, setCancionInvitadoId] = useState<string>(''); // Vacio = Administrador
+  const [guardandoCancion, setGuardandoCancion] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -135,7 +142,7 @@ export default function DashboardClient() {
 
       const cancionesConNombre = (cancionesData || []).map((c: Cancion) => ({
         ...c,
-        nombre_invitado: c.invitado_id ? mapaInvitados.get(c.invitado_id) || 'Invitado anónimo' : 'No especificado',
+        nombre_invitado: c.invitado_id ? mapaInvitados.get(c.invitado_id) || 'Invitado anónimo' : 'Administrador',
       }));
 
       setCanciones(cancionesConNombre);
@@ -261,6 +268,43 @@ export default function DashboardClient() {
     }
   };
 
+  // Abrir Modal de nueva canción
+  const abrirModalNuevaCancion = () => {
+    setNuevaCancionTitulo('');
+    setNuevaCancionArtista('');
+    setCancionInvitadoId('');
+    setModalCancionAbierto(true);
+  };
+
+  // Acción para guardar la canción (ILIMITADA)
+  const handleGuardarCancion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevaCancionTitulo.trim()) {
+      alert('Por favor ingresa el título de la canción.');
+      return;
+    }
+
+    setGuardandoCancion(true);
+    try {
+      const { error } = await supabase.from('canciones').insert([
+        {
+          titulo: nuevaCancionTitulo.trim(),
+          artista: nuevaCancionArtista.trim() || 'Desconocido',
+          invitado_id: cancionInvitadoId || null, // Nulo = Añadida por Admin
+        }
+      ]);
+
+      if (error) throw error;
+
+      setModalCancionAbierto(false);
+      cargarCanciones();
+    } catch (err: any) {
+      alert('Error al agregar la canción: ' + err.message);
+    } finally {
+      setGuardandoCancion(false);
+    }
+  };
+
   const getEstado = (inv: Invitado) => (inv.estado || 'pendiente').toLowerCase().trim();
 
   // Métricas Invitados
@@ -310,20 +354,12 @@ export default function DashboardClient() {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
-  // ================= MENSAJE DE WHATSAPP CON MENOS EMOJIS (LÍNEA 356) =================
+  // ================= MENSAJE DE WHATSAPP =================
   const enviarWhatsApp = (inv: Invitado) => {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
     
     // Mensaje estético, natural y directo
-    const texto = `¡Hola ${inv.nombre}!
-
-Nos encantaría que nos acompañes en este día tan especial. Con muchísima ilusión, te compartimos nuestra invitación digital con todos los detalles de nuestra boda, junto con el pase para ti y tu familia:
-
-👉 ${urlInvitacion}\n\n
-
-Por favor, ingresa al enlace para ver toda la información y confirmar o declinar tu asistencia en la sección de confirmación dentro de la misma página.
-
-¡Esperamos de corazón contar con ustedes para celebrar juntos este momento tan importante!`;
+    const texto = `¡Hola ${inv.nombre}!\n\nNos encantaría que nos acompañes en este día tan especial. Con muchísima ilusión, te compartimos nuestra invitación digital con todos los detalles de nuestra boda, junto con el pase para ti y tu familia:\n\n👉 ${urlInvitacion}\n\nPor favor, ingresa al enlace para ver toda la información y confirmar o declinar tu asistencia en la sección de confirmación dentro de la misma página.\n\n¡Esperamos de corazón contar con ustedes para celebrar juntos este momento tan importante! 💍`;
 
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
     const enlaceWA = telLimpio
@@ -739,7 +775,7 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
         {/* ================= VISTA 2: CANCIONES ================= */}
         {pestanaActiva === 'canciones' && (
           <div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="w-full sm:w-80">
                 <input
                   type="text"
@@ -750,17 +786,26 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
                 />
               </div>
 
-              <button
-                onClick={cargarCanciones}
-                className="inline-flex items-center px-3.5 py-2 bg-[#1f4027] rounded-lg text-sm font-medium text-white hover:bg-[#16301d] shadow-sm transition"
-              >
-                🔄 Actualizar Canciones
-              </button>
+              {/* Botón para Administradores de añadir canción ilimitada */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button
+                  onClick={abrirModalNuevaCancion}
+                  className="inline-flex items-center px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium shadow-sm transition"
+                >
+                  🎵 + Agregar Canción
+                </button>
+                <button
+                  onClick={cargarCanciones}
+                  className="inline-flex items-center px-3.5 py-2 bg-[#1f4027] rounded-lg text-sm font-medium text-white hover:bg-[#16301d] shadow-sm transition"
+                >
+                  🔄 Actualizar
+                </button>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-sm animate-fade-in">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Canción</th>
@@ -784,7 +829,7 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
                       </tr>
                     ) : (
                       cancionesFiltradas.map((cancion) => (
-                        <tr key={cancion.id} className="hover:bg-slate-50/60 transition">
+                        <tr key={cancion.id} className="hover:bg-slate-50/60 transition duration-150">
                           <td className="py-3.5 px-4 font-semibold text-slate-800">
                             🎵 {cancion.titulo}
                           </td>
@@ -792,14 +837,20 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
                             {cancion.artista || '—'}
                           </td>
                           <td className="py-3.5 px-4 text-slate-700">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                              👤 {cancion.nombre_invitado}
-                            </span>
+                            {cancion.nombre_invitado === 'Administrador' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                👑 {cancion.nombre_invitado}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                👤 {cancion.nombre_invitado}
+                              </span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <button
                               onClick={() => eliminarCancion(cancion.id)}
-                              className="text-xs px-2.5 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                              className="text-xs px-2.5 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition font-medium inline-flex items-center gap-1"
                               title="Eliminar canción"
                             >
                               🗑️ Eliminar
@@ -818,8 +869,8 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
 
       {/* Modal para Agregar/Editar Invitado Manual */}
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 transform scale-95 transition-all">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-800">
                 {invitadoEditando ? 'Editar Invitado' : 'Agregar Nuevo Invitado'}
@@ -900,6 +951,92 @@ Por favor, ingresa al enlace para ver toda la información y confirmar o declina
                   className="px-4 py-2 bg-[#1f4027] hover:bg-[#16301d] text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50"
                 >
                   {guardandoManual ? 'Guardando...' : invitadoEditando ? 'Actualizar' : 'Guardar Invitado'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Agregar Canción Manual por el Administrador (ILIMITADA) */}
+      {modalCancionAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 transform scale-95 transition-all">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-slate-800">
+                Agregar Nueva Canción
+              </h3>
+              <button
+                onClick={() => setModalCancionAbierto(false)}
+                className="text-slate-400 hover:text-slate-600 text-xl font-bold border-none bg-transparent"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarCancion} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                  Título de la Canción *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nuevaCancionTitulo}
+                  onChange={(e) => setNuevaCancionTitulo(e.target.value)}
+                  placeholder="Ej. La Chona"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                  Artista / Banda
+                </label>
+                <input
+                  type="text"
+                  value={nuevaCancionArtista}
+                  onChange={(e) => setNuevaCancionArtista(e.target.value)}
+                  placeholder="Ej. Los Tucanes de Tijuana"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                  Asignar a Invitado (Opcional)
+                </label>
+                <select
+                  value={cancionInvitadoId}
+                  onChange={(e) => setCancionInvitadoId(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027] bg-white cursor-pointer"
+                >
+                  <option value="">Administrador (Sin invitado)</option>
+                  {invitados.map((inv) => (
+                    <option key={inv.id} value={inv.id}>
+                      👤 {inv.nombre}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-400 mt-1 block">
+                  Si no seleccionas un invitado, se registrará que la sugerencia vino por parte del administrador.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModalCancionAbierto(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition border-none bg-transparent cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoCancion}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {guardandoCancion ? 'Guardando...' : 'Guardar Canción'}
                 </button>
               </div>
             </form>
