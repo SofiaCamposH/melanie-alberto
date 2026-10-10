@@ -315,7 +315,15 @@ export default function DashboardClient() {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
     
     // Mensaje estético, natural y directo
-    const texto = `¡Hola ${inv.nombre}! Nos hace mucha ilusión invitarte a nuestra boda. Te compartimos nuestra invitación digital personalizada con todos los detalles del evento y tus pases en este enlace: ${urlInvitacion}\n\nPor favor, ingresa al enlace para confirmar o declinar tu asistencia en la sección de confirmación (RSVP) dentro de la misma página. ¡Esperamos contar contigo! 💍`;
+    const texto = `¡Hola ${inv.nombre}!
+
+Nos encantaría que nos acompañes en este día tan especial. Con muchísima ilusión, te compartimos nuestra invitación digital con todos los detalles de nuestra boda, junto con el pase para ti y tu familia:
+
+👉 ${urlInvitacion}\n\n
+
+Por favor, ingresa al enlace para ver toda la información y confirmar o declinar tu asistencia en la sección de confirmación dentro de la misma página.
+
+¡Esperamos de corazón contar con ustedes para celebrar juntos este momento tan importante!`;
 
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
     const enlaceWA = telLimpio
