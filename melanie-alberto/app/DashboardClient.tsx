@@ -11,7 +11,7 @@ interface Invitado {
   boletos_asignados: number;
   boletos_aceptados?: number | null;
   creado_en?: string;
-  creado_por?: string | null; // <-- Se agregó para registrar al creador de la invitación
+  creado_por?: string | null; // Columna para el creador de la invitación
 }
 
 interface Cancion {
@@ -163,7 +163,7 @@ export default function DashboardClient() {
       const { error } = await supabase.from('invitados').delete().eq('id', id);
       if (error) throw error;
       cargarInvitados();
-      cargarCanciones(); // Actualizamos porque pudieron borrarse sus canciones (si hay cascade)
+      cargarCanciones();
     } catch (err: any) {
       alert('Error al eliminar el invitado: ' + err.message);
     }
@@ -183,7 +183,6 @@ export default function DashboardClient() {
     setNuevoNombre(inv.nombre);
     setNuevosBoletos(inv.boletos_asignados);
     
-    // Parseo básico de código de país existente
     let phone = inv.telefono || '';
     let code = '+52';
     
@@ -223,18 +222,23 @@ export default function DashboardClient() {
       }
 
       if (invitadoEditando) {
-        // ACTUALIZAR
+        // ACTUALIZAR (Al editar, si no tiene creador histórico, se actualiza al correo actual)
+        const creadorActual = invitadoEditando.creado_por && invitadoEditando.creado_por !== 'Sistema / Inicial'
+          ? invitadoEditando.creado_por 
+          : (session?.user?.email || 'Sistema / Inicial');
+
         const { error } = await supabase
           .from('invitados')
           .update({
             nombre: nuevoNombre.trim(),
             telefono: telefonoAGuardar,
             boletos_asignados: Number(nuevosBoletos) || 1,
+            creado_por: creadorActual,
           })
           .eq('id', invitadoEditando.id);
         if (error) throw error;
       } else {
-        // CREAR
+        // CREAR (Se asigna la sesión de quien está guardando)
         const { error } = await supabase.from('invitados').insert([
           {
             nombre: nuevoNombre.trim(),
@@ -242,7 +246,7 @@ export default function DashboardClient() {
             boletos_asignados: Number(nuevosBoletos) || 1,
             estado: 'pendiente',
             boletos_aceptados: null,
-            creado_por: session?.user?.email || 'Admin', // <-- Se guarda quién lo creó
+            creado_por: session?.user?.email || 'Sistema / Inicial',
           },
         ]);
         if (error) throw error;
@@ -306,11 +310,11 @@ export default function DashboardClient() {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
-  // ================= MENSAJE DE WHATSAPP (LÍNEA 354 APROX) =================
+  // ================= MENSAJE DE WHATSAPP CON MENOS EMOJIS (LÍNEA 356) =================
   const enviarWhatsApp = (inv: Invitado) => {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
     
-    // Mensaje natural y con formato impecable, limitando emojis para no saturar
+    // Mensaje estético, natural y directo
     const texto = `¡Hola ${inv.nombre}! Nos hace mucha ilusión invitarte a nuestra boda. Te compartimos nuestra invitación digital personalizada con todos los detalles del evento y tus pases en este enlace: ${urlInvitacion}\n\nPor favor, ingresa al enlace para confirmar o declinar tu asistencia en la sección de confirmación (RSVP) dentro de la misma página. ¡Esperamos contar contigo! 💍`;
 
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
@@ -364,7 +368,7 @@ export default function DashboardClient() {
               telefono,
               estado: 'pendiente',
               boletos_aceptados: null,
-              creado_por: session?.user?.email || 'Admin', // <-- Se registra al creador desde CSV
+              creado_por: session?.user?.email || 'Sistema / Inicial', // Asigna sesión de CSV
             });
           }
         }
@@ -600,15 +604,15 @@ export default function DashboardClient() {
               </div>
             </div>
 
-            {/* Tabla de Invitados (CON COLUMNA "CREADO POR") */}
+            {/* Tabla de Invitados */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-sm animate-fade-in">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Invitado / Familia</th>
                       <th className="py-3.5 px-4">Boletos Asignados</th>
-                      <th className="py-3.5 px-4">Creado Por</th> {/* <-- Nueva Columna */}
+                      <th className="py-3.5 px-4">Creado Por</th>
                       <th className="py-3.5 px-4">Estado</th>
                       <th className="py-3.5 px-4">Pases Aceptados</th>
                       <th className="py-3.5 px-4 text-right">Acciones</th>
@@ -634,11 +638,11 @@ export default function DashboardClient() {
                         const boletosAceptados = inv.boletos_aceptados;
 
                         return (
-                          <tr key={inv.id} className="hover:bg-slate-50/60 transition">
+                          <tr key={inv.id} className="hover:bg-slate-50/60 transition duration-150">
                             <td className="py-3.5 px-4 font-medium text-slate-800">
                               {inv.nombre}
                               {inv.telefono && (
-                                <span className="block text-xs text-slate-400 font-normal">
+                                <span className="block text-xs text-slate-400 font-normal mt-0.5">
                                   Tel: {inv.telefono}
                                 </span>
                               )}
@@ -646,8 +650,7 @@ export default function DashboardClient() {
                             <td className="py-3.5 px-4 text-slate-600">
                               {boletosAsignados} {boletosAsignados === 1 ? 'boleto' : 'boletos'}
                             </td>
-                            {/* Mostrar quién creó la invitación */}
-                            <td className="py-3.5 px-4 text-slate-500 font-medium text-xs">
+                            <td className="py-3.5 px-4 text-slate-500 font-medium text-xs max-w-[150px] truncate" title={inv.creado_por || 'Sistema / Inicial'}>
                               {inv.creado_por || 'Sistema / Inicial'}
                             </td>
                             <td className="py-3.5 px-4">
@@ -678,14 +681,14 @@ export default function DashboardClient() {
                               <div className="flex items-center justify-end gap-1.5 flex-wrap">
                                 <button
                                   onClick={() => enviarWhatsApp(inv)}
-                                  className="inline-flex items-center gap-1 text-xs px-2 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+                                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition duration-150 font-medium"
                                   title="Enviar invitación por WhatsApp"
                                 >
                                   WhatsApp
                                 </button>
                                 <button
                                   onClick={() => copiarEnlace(inv.id)}
-                                  className={`text-xs px-2 py-1.5 rounded border transition ${
+                                  className={`text-xs px-2.5 py-1.5 rounded border transition duration-150 font-medium ${
                                     copiadoId === inv.id
                                       ? 'bg-emerald-600 border-emerald-600 text-white'
                                       : 'border-slate-300 text-slate-600 hover:bg-slate-100'
@@ -696,17 +699,21 @@ export default function DashboardClient() {
                                 </button>
                                 <button
                                   onClick={() => abrirModalEditar(inv)}
-                                  className="text-xs px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+                                  className="text-xs p-1.5 rounded border border-slate-300 text-slate-600 hover:bg-slate-100 transition duration-150 flex items-center justify-center"
                                   title="Editar Invitado"
                                 >
-                                  ✏️
+                                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                  </svg>
                                 </button>
                                 <button
                                   onClick={() => eliminarInvitado(inv.id)}
-                                  className="text-xs px-2 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                                  className="text-xs p-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition duration-150 flex items-center justify-center"
                                   title="Eliminar Invitado"
                                 >
-                                  🗑️
+                                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                  </svg>
                                 </button>
                               </div>
                             </td>
@@ -811,7 +818,7 @@ export default function DashboardClient() {
               </h3>
               <button
                 onClick={() => setModalAbierto(false)}
-                className="text-slate-400 hover:text-slate-600 text-xl font-bold"
+                className="text-slate-400 hover:text-slate-600 text-xl font-bold border-none bg-transparent"
               >
                 ✕
               </button>
@@ -875,7 +882,7 @@ export default function DashboardClient() {
                 <button
                   type="button"
                   onClick={() => setModalAbierto(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition border-none bg-transparent"
                 >
                   Cancelar
                 </button>
