@@ -37,6 +37,10 @@ const i18n = {
     hall: "Salon de eventos \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
     mapBtn: "Ver en el Mapa",
+    addCalBtn: "Añadir al Calendario",
+    googleCal: "Google Calendar",
+    appleCal: "Apple / Outlook (.ics)",
+    shareBtn: "Enviar Invitación por WhatsApp 💬",
     gifts: "Mesa de Regalos",
     giftsText: "El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:",
     dress: "Código de Vestimenta",
@@ -98,6 +102,10 @@ const i18n = {
     hall: "Event Hall \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
     mapBtn: "View on Map",
+    addCalBtn: "Add to Calendar",
+    googleCal: "Google Calendar",
+    appleCal: "Apple / Outlook (.ics)",
+    shareBtn: "Send Invitation via WhatsApp 💬",
     gifts: "Gift Registry",
     giftsText: "Your presence is our biggest gift, but if you wish to give us something, here are our official gift registries. Thank you for your love and support!:",
     dress: "Dress Code",
@@ -166,6 +174,7 @@ export default function InvitacionZelda() {
 
   const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
   const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
+  const [calMenuAbierto, setCalMenuAbierto] = useState(false);
 
   const [queryMusica, setQueryMusica] = useState('');
   const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
@@ -188,8 +197,6 @@ export default function InvitacionZelda() {
   }, [id]);
 
   useEffect(() => {
-    // CORRECCIÓN DEL TEMPORIZADOR: Usando un formato seguro (Año, Mes-1, Día, Hora, Minuto, Segundo)
-    // El mes va de 0 a 11, por lo que Diciembre es 11
     const fechaBoda = new Date(2026, 11, 18, 18, 0, 0).getTime();
 
     const intervalo = setInterval(() => {
@@ -287,6 +294,18 @@ export default function InvitacionZelda() {
     }, 600);
   };
 
+  // Función para que los novios compartan la invitación con recordatorio integrado
+  const compartirInvitacion = () => {
+    const enlaceInvitacion = typeof window !== 'undefined' ? window.location.href : '';
+    const nombreInvitado = invitado?.nombre || 'Invitado Especial';
+    const pases = invitado?.boletos_asignados || 1;
+    
+    const msg = `¡Hola ${nombreInvitado}! Con muchísima emoción te invitamos a nuestra boda. 👰🤵✨\n\nTe compartimos nuestra invitación digital personalizada:\n👉 ${enlaceInvitacion}\n\n🙏 Te pedimos por favor ingresar al enlace de arriba para ver todos los detalles y CONFIRMAR O DECLINAR tu asistencia en la sección de "Confirmación de Asistencia" (rsvp) que está dentro de la misma invitación. (Tenemos reservado(s) ${pases} ${pases === 1 ? 'pase' : 'pases'} para ti).\n\n¡Esperamos que nos acompañes! ¡No faltes! 🎉💍`;
+
+    const encoded = encodeURIComponent(msg);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  };
+
   const confirmarAsistencia = async () => {
     setGuardandoConfirmacion(true);
     const { error } = await supabase
@@ -322,6 +341,37 @@ export default function InvitacionZelda() {
         obtenerInvitado();
       }
     }
+  };
+
+  // Función para descargar el archivo .ics para el calendario
+  const descargarIcal = () => {
+    const start = '20261218T180000';
+    const end = '20261218T223000'; // 10:30 PM de término
+    const title = 'Boda de Melanie & Alberto 👰🤵';
+    const loc = 'Salon de eventos "Gran Jardin", Adolfo López Mateos 203, Trojes de San Cristóbal';
+    const enlace = typeof window !== 'undefined' ? window.location.href : '';
+    const desc = `¡Te esperamos para celebrar nuestra boda!\n\nFecha: Viernes 18 de diciembre de 2026\nHora: 18:00 hrs (el evento concluye a las 22:30 hrs).\n\nTe recordamos confirmar o declinar tu asistencia en la invitación digital:\n${enlace}`;
+
+    const content = 
+      `BEGIN:VCALENDAR\n` +
+      `VERSION:2.0\n` +
+      `BEGIN:VEVENT\n` +
+      `SUMMARY:${title}\n` +
+      `DTSTART:${start}\n` +
+      `DTEND:${end}\n` +
+      `LOCATION:${loc}\n` +
+      `DESCRIPTION:${desc.replace(/\n/g, '\\n')}\n` +
+      `END:VEVENT\n` +
+      `END:VCALENDAR`;
+
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'boda-melanie-y-alberto.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const togglePreview = (url?: string) => {
@@ -398,7 +448,6 @@ export default function InvitacionZelda() {
     }
   };
 
-  // CORRECCIÓN DEL CARRUSEL: Evitar índices negativos al regresar foto
   const siguienteFoto = () => setFotoIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
   const fotoAnterior = () => setFotoIndex((prev) => (prev === 0 ? fotos.length - 1 : prev - 1));
 
@@ -410,7 +459,7 @@ export default function InvitacionZelda() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center overflow-hidden relative">
       
-      {/* Botón Flotante para cambiar idioma (i18n Toggle) */}
+      {/* Botón Flotante para cambiar idioma */}
       <div className="fixed top-4 right-4 z-50 flex gap-1 bg-[#1f4027]/90 p-1 rounded-full backdrop-blur-md border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.4)]">
         <button 
           onClick={() => setLang('es')}
@@ -444,7 +493,7 @@ export default function InvitacionZelda() {
         }}
       />
 
-      {/* VISTA 1: SOBRE CERRADO CON NAVI (Clickeable en cualquier parte) */}
+      {/* VISTA 1: SOBRE CERRADO */}
       {!sobreAbierto && (
         <div
           onClick={tocarNavi}
@@ -562,45 +611,7 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 3. CARRUSEL */}
-            <div className="w-full flex flex-col items-center pt-2">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
-              
-              <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
-                <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
-                  <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
-                    <img src={fotos[fotoIndex]} alt={`Momento ${fotoIndex + 1}`} className="w-full h-full object-cover transition-opacity duration-500" />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={fotoAnterior}
-                  aria-label="Anterior"
-                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
-                >
-                  &#10094;
-                </button>
-                <button
-                  type="button"
-                  onClick={siguienteFoto}
-                  aria-label="Siguiente"
-                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
-                >
-                  &#10095;
-                </button>
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                {fotos.map((_, i) => (
-                  <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i === fotoIndex ? 'bg-[#4A3B2C]' : 'bg-[#8C6D46]/40'}`} />
-                ))}
-              </div>
-            </div>
-
-            {/* 4. FECHA Y LUGAR */}
+            {/* 3. FECHA Y LUGAR + BOTONES DE MAPA Y CALENDARIO */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dateLoc}</h2>
               
@@ -609,7 +620,6 @@ export default function InvitacionZelda() {
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.eventDay}</span>
                   <p className="font-semibold text-xl">{t.date}</p>
                 </div>
-                {/* Aquí agregamos sutilmente el término de recepción */}
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-sm uppercase tracking-widest text-[#8C6D46] font-bold mb-1">{t.reception}</span>
                   <p className="font-semibold text-xl">18:00 hrs</p>
@@ -622,46 +632,53 @@ export default function InvitacionZelda() {
                 </div>
               </div>
 
-              <a
-                href="https://maps.app.goo.gl/DpDwAydRXVEvvoUw5"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-[#1f4027] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#2d5c38] transition shadow-[4px_4px_0px_0px_rgba(140,109,70,1)] border border-[#8C6D46]"
-              >
-                {t.mapBtn}
-              </a>
-            </div>
-
-            {/* 5. MESA DE REGALOS */}
-            <div className="w-full text-center my-2">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.gifts}</h2>
-              
-              <p className="text-base text-[#4A3B2C] mb-4 px-4">
-                {t.giftsText}
-              </p>
-
-              <div className="flex justify-center gap-6 my-6">
-                <a href="https://mesaderegalos.liverpool.com.mx/milistaderegalos/60041692" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
-                  <img src="/liverpool.png" alt="Liverpool" className="h-10 sm:h-12 w-auto object-contain" />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                {/* Botón de Mapa */}
+                <a
+                  href="https://maps.app.goo.gl/DpDwAydRXVEvvoUw5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-[#1f4027] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#2d5c38] transition shadow-[4px_4px_0px_0px_rgba(140,109,70,1)] border border-[#8C6D46] w-full sm:w-auto text-center"
+                >
+                  {t.mapBtn}
                 </a>
-                <a href="https://www.amazon.com.mx/wedding/share/Monkeysbrides" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
-                  <img src="/amazon.png" alt="Amazon" className="h-10 sm:h-12 w-auto object-contain" />
-                </a>
+
+                {/* Botón de Agregar al Calendario */}
+                <div className="relative w-full sm:w-auto">
+                  <button
+                    onClick={() => setCalMenuAbierto(!calMenuAbierto)}
+                    className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(31,64,39,1)] border border-[#1f4027] w-full sm:w-auto flex items-center justify-center gap-2"
+                  >
+                    📅 {t.addCalBtn}
+                  </button>
+
+                  {calMenuAbierto && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 bg-[#f4e8c1] border-2 border-[#8C6D46] shadow-[0_10px_25px_rgba(0,0,0,0.3)] rounded-lg p-2 flex flex-col gap-1 w-52 z-30 font-semibold text-sm">
+                      <a
+                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Melanie & Alberto 🤵👰 Boda")}&dates=20261218T180000/20261218T223000&details=${encodeURIComponent("Estás cordialmente invitado a celebrar nuestra boda.\n\nRecuerda confirmar o declinar tu asistencia en la invitación digital:\n" + (typeof window !== 'undefined' ? window.location.href : ''))}&location=${encodeURIComponent('Salon de eventos "Gran Jardin", Adolfo López Mateos 203, Trojes de San Cristóbal')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 hover:bg-[#e8dcc4] transition flex items-center gap-2 cursor-pointer text-left text-[#4A3B2C]"
+                        onClick={() => setCalMenuAbierto(false)}
+                      >
+                        🌐 {t.googleCal}
+                      </a>
+                      <button
+                        onClick={() => {
+                          descargarIcal();
+                          setCalMenuAbierto(false);
+                        }}
+                        className="p-2 hover:bg-[#e8dcc4] transition flex items-center gap-2 w-full text-left bg-transparent border-none text-[#4A3B2C]"
+                      >
+                        🍏 {t.appleCal}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
-
-            {/* 6. CÓDIGO DE VESTIMENTA */}
-            <div className="w-full text-center my-2">
-              <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dress}</h2>
-              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">{t.formal}</p>
-              <p className="text-[#4A3B2C] text-lg font-semibold">{t.whiteRes}</p>
-              
-              <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
-            </div>
-
-            {/* 7. CONFIRMACIÓN DE ASISTENCIA */}
+            {/* 4. CONFIRMACIÓN DE ASISTENCIA (AHORA JUSTO ABAJO DE FECHA Y LUGAR) */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 {t.rsvpTitle}
@@ -713,16 +730,16 @@ export default function InvitacionZelda() {
                 </div>
               )}
               
-              <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
                 {invitado?.estado === 'confirmado' ? (
                   <div className="bg-[#2d5c38] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
-                    <p className="font-bold italic text-xl drop-shadow-sm">
+                    <p className="font-bold italic text-xl drop-shadow-sm text-center">
                       {t.questAccepted} {invitado.boletos_aceptados || totalAsignados} { (invitado.boletos_aceptados || totalAsignados) === 1 ? t.pass : t.passes}.
                     </p>
                   </div>
                 ) : invitado?.estado === 'rechazado' ? (
                   <div className="bg-[#4A3B2C] text-[#f4e8c1] p-4 border border-[#c5a059] w-full">
-                    <p className="font-bold italic text-xl drop-shadow-sm">{t.missYou}</p>
+                    <p className="font-bold italic text-xl drop-shadow-sm text-center">{t.missYou}</p>
                   </div>
                 ) : (
                   <>
@@ -744,9 +761,19 @@ export default function InvitacionZelda() {
                   </>
                 )}
               </div>
+
+              {/* BOTÓN: COMPARTIR LA INVITACIÓN ORIGINAL POR WHATSAPP */}
+              <div className="mt-6 border-t border-[#8C6D46]/20 pt-4 flex justify-center">
+                <button
+                  onClick={compartirInvitacion}
+                  className="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold border border-green-600 hover:bg-[#20b855] transition flex items-center justify-center gap-2 text-sm shadow-md"
+                >
+                  📤 {t.shareBtn}
+                </button>
+              </div>
             </div>
 
-            {/* 8. MELODÍAS (MÁXIMO 3, REPRODUCTOR SVG Y ELIMINAR CANCIÓN) */}
+            {/* 5. MELODÍAS (MÁXIMO 3) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 {t.melodiesTitle}
@@ -919,6 +946,75 @@ export default function InvitacionZelda() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* 6. NOSOTROS (CARRUSEL) */}
+            <div className="w-full flex flex-col items-center pt-2">
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
+              
+              <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
+                <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
+                  <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
+                    <img src={fotos[fotoIndex]} alt={`Momento ${fotoIndex + 1}`} className="w-full h-full object-cover transition-opacity duration-500" />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fotoAnterior}
+                  aria-label="Anterior"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
+                >
+                  &#10094;
+                </button>
+                <button
+                  type="button"
+                  onClick={siguienteFoto}
+                  aria-label="Siguiente"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
+                >
+                  &#10095;
+                </button>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                {fotos.map((_, i) => (
+                  <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i === fotoIndex ? 'bg-[#4A3B2C]' : 'bg-[#8C6D46]/40'}`} />
+                ))}
+              </div>
+            </div>
+
+            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
+
+            {/* 7. MESA DE REGALOS */}
+            <div className="w-full text-center my-2">
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.gifts}</h2>
+              
+              <p className="text-base text-[#4A3B2C] mb-4 px-4">
+                {t.giftsText}
+              </p>
+
+              <div className="flex justify-center gap-6 my-6">
+                <a href="https://mesaderegalos.liverpool.com.mx/milistaderegalos/60041692" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
+                  <img src="/liverpool.png" alt="Liverpool" className="h-10 sm:h-12 w-auto object-contain" />
+                </a>
+                <a href="https://www.amazon.com.mx/wedding/share/Monkeysbrides" target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition bg-white p-2 rounded-lg shadow-md border border-[#c5a059]">
+                  <img src="/amazon.png" alt="Amazon" className="h-10 sm:h-12 w-auto object-contain" />
+                </a>
+              </div>
+            </div>
+
+            <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
+
+            {/* 8. CÓDIGO DE VESTIMENTA */}
+            <div className="w-full text-center my-2">
+              <h2 className="text-4xl sm:text-5xl mb-4 text-[#1f4027] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dress}</h2>
+              <p className="text-2xl font-bold text-[#8C6D46] uppercase tracking-widest mb-1">{t.formal}</p>
+              <p className="text-[#4A3B2C] text-lg font-semibold">{t.whiteRes}</p>
+              
+              <img src="/vestimenta.png" alt="Código de Vestimenta" className="w-24 sm:w-32 h-auto mx-auto mt-4 drop-shadow-md" />
             </div>
 
           </div>
