@@ -11,7 +11,15 @@ interface Invitado {
   boletos_asignados: number;
   boletos_aceptados?: number | null;
   creado_en?: string;
-  creado_por?: string | null; // Columna para el creador de la invitación
+  creado_por?: string | null;
+}
+
+interface iTunesTrack {
+  trackId: number;
+  trackName: string;
+  artistName: string;
+  artworkUrl100: string;
+  previewUrl?: string;
 }
 
 interface Cancion {
@@ -21,6 +29,7 @@ interface Cancion {
   invitado_id?: string;
   nombre_invitado?: string;
   creado_en?: string;
+  creado_por?: string | null; // Se agrega para identificar al admin
 }
 
 export default function DashboardClient() {
@@ -54,16 +63,19 @@ export default function DashboardClient() {
   const [invitadoEditando, setInvitadoEditando] = useState<Invitado | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoTelefono, setNuevoTelefono] = useState('');
-  const [codigoPais, setCodigoPais] = useState('+52'); // +52 Predeterminado
+  const [codigoPais, setCodigoPais] = useState('+52');
   const [nuevosBoletos, setNuevosBoletos] = useState(2);
   const [guardandoManual, setGuardandoManual] = useState(false);
 
-  // Modal para agregar canciones desde el Panel (Sin límites)
+  // Modal y Estados de Búsqueda API para Canciones Ilimitadas (Admin)
   const [modalCancionAbierto, setModalCancionAbierto] = useState(false);
-  const [nuevaCancionTitulo, setNuevaCancionTitulo] = useState('');
-  const [nuevaCancionArtista, setNuevaCancionArtista] = useState('');
-  const [cancionInvitadoId, setCancionInvitadoId] = useState<string>(''); // Vacio = Administrador
+  const [queryMusica, setQueryMusica] = useState('');
+  const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
+  const [buscandoiTunes, setBuscandoiTunes] = useState(false);
+  const [cancionSeleccionada, setCancionSeleccionada] = useState<iTunesTrack | null>(null);
+  const [previewSonando, setPreviewSonando] = useState(false);
   const [guardandoCancion, setGuardandoCancion] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,6 +97,36 @@ export default function DashboardClient() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Efecto para buscar en la API de iTunes
+  useEffect(() => {
+    if (queryMusica.trim().length < 2) {
+      setResultadosiTunes([]);
+      setBuscandoiTunes(false);
+      return;
+    }
+
+    if (cancionSeleccionada && `${cancionSeleccionada.trackName} - ${cancionSeleccionada.artistName}` === queryMusica) {
+      return;
+    }
+
+    setBuscandoiTunes(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://itunes.apple.com/search?term=${encodeURIComponent(queryMusica)}&entity=song&limit=5`
+        );
+        const data = await res.json();
+        setResultadosiTunes(data.results || []);
+      } catch (err) {
+        console.error("Error buscando en iTunes:", err);
+      } finally {
+        setBuscandoiTunes(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [queryMusica, cancionSeleccionada]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +184,9 @@ export default function DashboardClient() {
 
       const cancionesConNombre = (cancionesData || []).map((c: Cancion) => ({
         ...c,
-        nombre_invitado: c.invitado_id ? mapaInvitados.get(c.invitado_id) || 'Invitado anónimo' : 'Administrador',
+        nombre_invitado: c.invitado_id 
+          ? mapaInvitados.get(c.invitado_id) || 'Invitado anónimo' 
+          : (c.creado_por || 'Administrador'), // Muestra el correo de la sesión si no hay invitado
       }));
 
       setCanciones(cancionesConNombre);
@@ -229,7 +273,6 @@ export default function DashboardClient() {
       }
 
       if (invitadoEditando) {
-        // ACTUALIZAR (Al editar, si no tiene creador histórico, se actualiza al correo actual)
         const creadorActual = invitadoEditando.creado_por && invitadoEditando.creado_por !== 'Sistema / Inicial'
           ? invitadoEditando.creado_por 
           : (session?.user?.email || 'Sistema / Inicial');
@@ -245,7 +288,6 @@ export default function DashboardClient() {
           .eq('id', invitadoEditando.id);
         if (error) throw error;
       } else {
-        // CREAR (Se asigna la sesión de quien está guardando)
         const { error } = await supabase.from('invitados').insert([
           {
             nombre: nuevoNombre.trim(),
@@ -268,35 +310,65 @@ export default function DashboardClient() {
     }
   };
 
+  // ================= FUNCIONES DE REPRODUCCIÓN (API iTUNES) =================
+  const togglePreview = (url?: string) => {
+    if (!url || !previewAudioRef.current) return;
+
+    if (previewSonando && previewAudioRef.current.src === url) {
+      previewAudioRef.current.pause();
+      setPreviewSonando(false);
+    } else {
+      previewAudioRef.current.src = url;
+      previewAudioRef.current.play().then(() => {
+        setPreviewSonando(true);
+      }).catch(e => console.log("Error en preview:", e));
+    }
+  };
+
+  const seleccionarPista = (track: iTunesTrack) => {
+    setCancionSeleccionada(track);
+    setQueryMusica(`${track.trackName} - ${track.artistName}`);
+    setResultadosiTunes([]);
+    if (track.previewUrl) {
+      togglePreview(track.previewUrl);
+    }
+  };
+
   // Abrir Modal de nueva canción
   const abrirModalNuevaCancion = () => {
-    setNuevaCancionTitulo('');
-    setNuevaCancionArtista('');
-    setCancionInvitadoId('');
+    setQueryMusica('');
+    setCancionSeleccionada(null);
+    setResultadosiTunes([]);
     setModalCancionAbierto(true);
   };
 
-  // Acción para guardar la canción (ILIMITADA)
-  const handleGuardarCancion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nuevaCancionTitulo.trim()) {
-      alert('Por favor ingresa el título de la canción.');
-      return;
-    }
-
+  // Guardar Canción seleccionada vía API asignándola a la Sesión (Ilimitado)
+  const handleGuardarCancion = async () => {
+    if (!queryMusica.trim()) return alert('Busca o escribe una canción primero.');
+    
     setGuardandoCancion(true);
     try {
+      const tituloAEnviar = cancionSeleccionada ? cancionSeleccionada.trackName : queryMusica;
+      const artistaAEnviar = cancionSeleccionada ? cancionSeleccionada.artistName : 'Varios / No especificado';
+
       const { error } = await supabase.from('canciones').insert([
         {
-          titulo: nuevaCancionTitulo.trim(),
-          artista: nuevaCancionArtista.trim() || 'Desconocido',
-          invitado_id: cancionInvitadoId || null, // Nulo = Añadida por Admin
+          titulo: tituloAEnviar,
+          artista: artistaAEnviar,
+          invitado_id: null, // Queda nulo porque no pertenece a un invitado externo
+          creado_por: session?.user?.email || 'Administrador', // Lo asignamos automáticamente a la sesión
         }
       ]);
 
       if (error) throw error;
 
       setModalCancionAbierto(false);
+      setCancionSeleccionada(null);
+      setQueryMusica('');
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        setPreviewSonando(false);
+      }
       cargarCanciones();
     } catch (err: any) {
       alert('Error al agregar la canción: ' + err.message);
@@ -307,7 +379,6 @@ export default function DashboardClient() {
 
   const getEstado = (inv: Invitado) => (inv.estado || 'pendiente').toLowerCase().trim();
 
-  // Métricas Invitados
   const totalInvitaciones = invitados.length;
   const totalBoletos = invitados.reduce((acc, curr) => acc + (Number(curr.boletos_asignados) || 0), 0);
 
@@ -324,7 +395,6 @@ export default function DashboardClient() {
     return acc + aceptados;
   }, 0);
 
-  // Filtros Invitados
   const invitadosFiltrados = invitados.filter((inv) => {
     const coincideNombre = inv.nombre?.toLowerCase().includes(busqueda.toLowerCase());
     if (!coincideNombre) return false;
@@ -337,7 +407,6 @@ export default function DashboardClient() {
     return true;
   });
 
-  // Filtros Canciones
   const cancionesFiltradas = canciones.filter((c) => {
     const term = busquedaCancion.toLowerCase();
     return (
@@ -354,11 +423,9 @@ export default function DashboardClient() {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
-  // ================= MENSAJE DE WHATSAPP =================
   const enviarWhatsApp = (inv: Invitado) => {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
     
-    // Mensaje estético, natural y directo
     const texto = `¡Hola ${inv.nombre}!\n\nNos encantaría que nos acompañes en este día tan especial. Con muchísima ilusión, te compartimos nuestra invitación digital con todos los detalles de nuestra boda, junto con el pase para ti y tu familia:\n\n👉 ${urlInvitacion}\n\nPor favor, ingresa al enlace para ver toda la información y confirmar o declinar tu asistencia en la sección de confirmación dentro de la misma página.\n\n¡Esperamos de corazón contar con ustedes para celebrar juntos este momento tan importante! 💍`;
 
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
@@ -412,7 +479,7 @@ export default function DashboardClient() {
               telefono,
               estado: 'pendiente',
               boletos_aceptados: null,
-              creado_por: session?.user?.email || 'Sistema / Inicial', // Asigna sesión de CSV
+              creado_por: session?.user?.email || 'Sistema / Inicial',
             });
           }
         }
@@ -504,7 +571,12 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Barra Superior */}
+      <audio
+        ref={previewAudioRef}
+        onEnded={() => setPreviewSonando(false)}
+        className="hidden"
+      />
+
       <header className="bg-[#1f4027] text-white px-6 py-2.5 flex justify-between items-center text-xs sm:text-sm shadow-md">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -520,7 +592,6 @@ export default function DashboardClient() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Encabezado y Selector de Pestañas */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-200 pb-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#1f4027]">
@@ -531,7 +602,6 @@ export default function DashboardClient() {
             </p>
           </div>
 
-          {/* Selector de Pestañas */}
           <div className="flex bg-slate-200/70 p-1 rounded-xl">
             <button
               onClick={() => setPestanaActiva('invitados')}
@@ -559,7 +629,6 @@ export default function DashboardClient() {
         {/* ================= VISTA 1: INVITADOS ================= */}
         {pestanaActiva === 'invitados' && (
           <div>
-            {/* Acciones de Invitados */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <button
@@ -592,7 +661,6 @@ export default function DashboardClient() {
               </button>
             </div>
 
-            {/* Tarjetas Métricas */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Boletos</p>
@@ -619,7 +687,6 @@ export default function DashboardClient() {
               </div>
             </div>
 
-            {/* Barra de Búsqueda y Filtros */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="w-full md:w-80">
                 <input
@@ -648,7 +715,6 @@ export default function DashboardClient() {
               </div>
             </div>
 
-            {/* Tabla de Invitados */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm animate-fade-in">
@@ -786,7 +852,7 @@ export default function DashboardClient() {
                 />
               </div>
 
-              {/* Botón para Administradores de añadir canción ilimitada */}
+              {/* Botón para Administradores de añadir canción */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <button
                   onClick={abrirModalNuevaCancion}
@@ -828,36 +894,40 @@ export default function DashboardClient() {
                         </td>
                       </tr>
                     ) : (
-                      cancionesFiltradas.map((cancion) => (
-                        <tr key={cancion.id} className="hover:bg-slate-50/60 transition duration-150">
-                          <td className="py-3.5 px-4 font-semibold text-slate-800">
-                            🎵 {cancion.titulo}
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-600">
-                            {cancion.artista || '—'}
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-700">
-                            {cancion.nombre_invitado === 'Administrador' ? (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-                                👑 {cancion.nombre_invitado}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                                👤 {cancion.nombre_invitado}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              onClick={() => eliminarCancion(cancion.id)}
-                              className="text-xs px-2.5 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition font-medium inline-flex items-center gap-1"
-                              title="Eliminar canción"
-                            >
-                              🗑️ Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      cancionesFiltradas.map((cancion) => {
+                        const esAdmin = cancion.nombre_invitado === session?.user?.email || cancion.nombre_invitado === 'Administrador';
+                        
+                        return (
+                          <tr key={cancion.id} className="hover:bg-slate-50/60 transition duration-150">
+                            <td className="py-3.5 px-4 font-semibold text-slate-800">
+                              🎵 {cancion.titulo}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">
+                              {cancion.artista || '—'}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-700">
+                              {esAdmin ? (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                  👑 {cancion.nombre_invitado}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                  👤 {cancion.nombre_invitado}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                onClick={() => eliminarCancion(cancion.id)}
+                                className="text-xs px-2.5 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition font-medium inline-flex items-center gap-1"
+                                title="Eliminar canción"
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -958,13 +1028,13 @@ export default function DashboardClient() {
         </div>
       )}
 
-      {/* Modal para Agregar Canción Manual por el Administrador (ILIMITADA) */}
+      {/* Modal para Agregar Canción Manual por el Administrador API iTUNES */}
       {modalCancionAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 transform scale-95 transition-all">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 transform scale-95 transition-all flex flex-col gap-4">
+            <div className="flex justify-between items-center mb-1">
               <h3 className="text-lg font-bold text-slate-800">
-                Agregar Nueva Canción
+                Agregar Canción (Ilimitado)
               </h3>
               <button
                 onClick={() => setModalCancionAbierto(false)}
@@ -974,72 +1044,99 @@ export default function DashboardClient() {
               </button>
             </div>
 
-            <form onSubmit={handleGuardarCancion} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Título de la Canción *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={nuevaCancionTitulo}
-                  onChange={(e) => setNuevaCancionTitulo(e.target.value)}
-                  placeholder="Ej. La Chona"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Artista / Banda
-                </label>
-                <input
-                  type="text"
-                  value={nuevaCancionArtista}
-                  onChange={(e) => setNuevaCancionArtista(e.target.value)}
-                  placeholder="Ej. Los Tucanes de Tijuana"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Asignar a Invitado (Opcional)
-                </label>
-                <select
-                  value={cancionInvitadoId}
-                  onChange={(e) => setCancionInvitadoId(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027] bg-white cursor-pointer"
-                >
-                  <option value="">Administrador (Sin invitado)</option>
-                  {invitados.map((inv) => (
-                    <option key={inv.id} value={inv.id}>
-                      👤 {inv.nombre}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs text-slate-400 mt-1 block">
-                  Si no seleccionas un invitado, se registrará que la sugerencia vino por parte del administrador.
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Busca una canción o escribe su nombre..."
+                value={queryMusica}
+                onChange={(e) => {
+                  setQueryMusica(e.target.value);
+                  if (cancionSeleccionada) setCancionSeleccionada(null);
+                }}
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1f4027]"
+              />
+              {buscandoiTunes && (
+                <span className="absolute right-3 top-3 text-xs text-slate-400 animate-pulse">
+                  Buscando...
                 </span>
-              </div>
+              )}
+            </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setModalCancionAbierto(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition border-none bg-transparent cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={guardandoCancion}
-                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {guardandoCancion ? 'Guardando...' : 'Guardar Canción'}
-                </button>
+            {/* Desplegable de resultados iTunes */}
+            {resultadosiTunes.length > 0 && !cancionSeleccionada && (
+              <div className="w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100 text-left">
+                {resultadosiTunes.map((track) => (
+                  <div
+                    key={track.trackId}
+                    onClick={() => seleccionarPista(track)}
+                    className="flex items-center gap-3 p-2.5 hover:bg-slate-50 cursor-pointer transition"
+                  >
+                    <img src={track.artworkUrl100} alt={track.trackName} className="w-10 h-10 rounded-md object-cover shadow-sm flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{track.trackName}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{track.artistName}</p>
+                    </div>
+                    {track.previewUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePreview(track.previewUrl);
+                        }}
+                        className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
+                      >
+                        {previewSonando && previewAudioRef.current?.src === track.previewUrl ? (
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </form>
+            )}
+
+            {/* Tarjeta de Canción Seleccionada */}
+            {cancionSeleccionada && (
+              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm text-left">
+                <img src={cancionSeleccionada.artworkUrl100} alt={cancionSeleccionada.trackName} className="w-12 h-12 rounded-lg object-cover shadow flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{cancionSeleccionada.trackName}</p>
+                  <p className="text-xs text-slate-500 truncate">{cancionSeleccionada.artistName}</p>
+                </div>
+                {cancionSeleccionada.previewUrl && (
+                  <button
+                    type="button"
+                    onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
+                    className="w-8 h-8 rounded-full bg-[#1f4027] text-white flex items-center justify-center hover:bg-[#16301d] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
+                  >
+                    {previewSonando ? (
+                      <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5 fill-white ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setModalCancionAbierto(false)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition border-none bg-transparent cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGuardarCancion}
+                disabled={guardandoCancion || !queryMusica.trim()}
+                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {guardandoCancion ? 'Guardando...' : 'Guardar Canción'}
+              </button>
+            </div>
           </div>
         </div>
       )}
