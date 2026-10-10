@@ -37,10 +37,7 @@ const i18n = {
     hall: "Salon de eventos \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
     mapBtn: "Ver en el Mapa",
-    addCalBtn: "Añadir al Calendario",
-    googleCal: "Google Calendar",
-    appleCal: "Apple / Outlook (.ics)",
-    shareBtn: "Enviar Invitación por WhatsApp 💬",
+    addCalBtn: "Añadir a Google Calendar",
     gifts: "Mesa de Regalos",
     giftsText: "El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:",
     dress: "Código de Vestimenta",
@@ -102,10 +99,7 @@ const i18n = {
     hall: "Event Hall \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
     mapBtn: "View on Map",
-    addCalBtn: "Add to Calendar",
-    googleCal: "Google Calendar",
-    appleCal: "Apple / Outlook (.ics)",
-    shareBtn: "Send Invitation via WhatsApp 💬",
+    addCalBtn: "Add to Google Calendar",
     gifts: "Gift Registry",
     giftsText: "Your presence is our biggest gift, but if you wish to give us something, here are our official gift registries. Thank you for your love and support!:",
     dress: "Dress Code",
@@ -174,7 +168,6 @@ export default function InvitacionZelda() {
 
   const [boletosSeleccionados, setBoletosSeleccionados] = useState<number>(1);
   const [guardandoConfirmacion, setGuardandoConfirmacion] = useState(false);
-  const [calMenuAbierto, setCalMenuAbierto] = useState(false);
 
   const [queryMusica, setQueryMusica] = useState('');
   const [resultadosiTunes, setResultadosiTunes] = useState<iTunesTrack[]>([]);
@@ -294,18 +287,6 @@ export default function InvitacionZelda() {
     }, 600);
   };
 
-  // Función para que los novios compartan la invitación con recordatorio integrado
-  const compartirInvitacion = () => {
-    const enlaceInvitacion = typeof window !== 'undefined' ? window.location.href : '';
-    const nombreInvitado = invitado?.nombre || 'Invitado Especial';
-    const pases = invitado?.boletos_asignados || 1;
-    
-    const msg = `¡Hola ${nombreInvitado}! Con muchísima emoción te invitamos a nuestra boda. 👰🤵✨\n\nTe compartimos nuestra invitación digital personalizada:\n👉 ${enlaceInvitacion}\n\n🙏 Te pedimos por favor ingresar al enlace de arriba para ver todos los detalles y CONFIRMAR O DECLINAR tu asistencia en la sección de "Confirmación de Asistencia" (rsvp) que está dentro de la misma invitación. (Tenemos reservado(s) ${pases} ${pases === 1 ? 'pase' : 'pases'} para ti).\n\n¡Esperamos que nos acompañes! ¡No faltes! 🎉💍`;
-
-    const encoded = encodeURIComponent(msg);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
-  };
-
   const confirmarAsistencia = async () => {
     setGuardandoConfirmacion(true);
     const { error } = await supabase
@@ -343,35 +324,10 @@ export default function InvitacionZelda() {
     }
   };
 
-  // Función para descargar el archivo .ics para el calendario
-  const descargarIcal = () => {
-    const start = '20261218T180000';
-    const end = '20261218T223000'; // 10:30 PM de término
-    const title = 'Boda de Melanie & Alberto 👰🤵';
-    const loc = 'Salon de eventos "Gran Jardin", Adolfo López Mateos 203, Trojes de San Cristóbal';
-    const enlace = typeof window !== 'undefined' ? window.location.href : '';
-    const desc = `¡Te esperamos para celebrar nuestra boda!\n\nFecha: Viernes 18 de diciembre de 2026\nHora: 18:00 hrs (el evento concluye a las 22:30 hrs).\n\nTe recordamos confirmar o declinar tu asistencia en la invitación digital:\n${enlace}`;
-
-    const content = 
-      `BEGIN:VCALENDAR\n` +
-      `VERSION:2.0\n` +
-      `BEGIN:VEVENT\n` +
-      `SUMMARY:${title}\n` +
-      `DTSTART:${start}\n` +
-      `DTEND:${end}\n` +
-      `LOCATION:${loc}\n` +
-      `DESCRIPTION:${desc.replace(/\n/g, '\\n')}\n` +
-      `END:VEVENT\n` +
-      `END:VCALENDAR`;
-
-    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'boda-melanie-y-alberto.ics');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const irAGoogleCalendar = () => {
+    const link = typeof window !== 'undefined' ? window.location.href : '';
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Boda de Melanie & Alberto 🤵👰 Boda")}&dates=20261218T180000/20261218T223000&details=${encodeURIComponent("Estás cordialmente invitado a celebrar nuestra boda.\n\nPor favor, no olvides confirmar o declinar tu asistencia en la invitación digital:\n" + link)}&location=${encodeURIComponent('Salon de eventos "Gran Jardin", Adolfo López Mateos 203, Trojes de San Cristóbal')}`;
+    window.open(googleUrl, '_blank');
   };
 
   const togglePreview = (url?: string) => {
@@ -611,7 +567,45 @@ export default function InvitacionZelda() {
               </div>
             </div>
 
-            {/* 3. FECHA Y LUGAR + BOTONES DE MAPA Y CALENDARIO */}
+            {/* 3. CARRUSEL (AHORA ABAJO DEL CONTADOR) */}
+            <div className="w-full flex flex-col items-center pt-2">
+              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
+              
+              <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
+                <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
+                  <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
+                    <img src={fotos[fotoIndex]} alt={`Momento ${fotoIndex + 1}`} className="w-full h-full object-cover transition-opacity duration-500" />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fotoAnterior}
+                  aria-label="Anterior"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
+                >
+                  &#10094;
+                </button>
+                <button
+                  type="button"
+                  onClick={siguienteFoto}
+                  aria-label="Siguiente"
+                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
+                >
+                  &#10095;
+                </button>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                {fotos.map((_, i) => (
+                  <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i === fotoIndex ? 'bg-[#4A3B2C]' : 'bg-[#8C6D46]/40'}`} />
+                ))}
+              </div>
+            </div>
+
+            {/* 4. FECHA Y LUGAR + MAPA Y CALENDARIO */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-8 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.dateLoc}</h2>
               
@@ -633,7 +627,6 @@ export default function InvitacionZelda() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                {/* Botón de Mapa */}
                 <a
                   href="https://maps.app.goo.gl/DpDwAydRXVEvvoUw5"
                   target="_blank"
@@ -643,42 +636,17 @@ export default function InvitacionZelda() {
                   {t.mapBtn}
                 </a>
 
-                {/* Botón de Agregar al Calendario */}
-                <div className="relative w-full sm:w-auto">
-                  <button
-                    onClick={() => setCalMenuAbierto(!calMenuAbierto)}
-                    className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(31,64,39,1)] border border-[#1f4027] w-full sm:w-auto flex items-center justify-center gap-2"
-                  >
-                    📅 {t.addCalBtn}
-                  </button>
-
-                  {calMenuAbierto && (
-                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 bg-[#f4e8c1] border-2 border-[#8C6D46] shadow-[0_10px_25px_rgba(0,0,0,0.3)] rounded-lg p-2 flex flex-col gap-1 w-52 z-30 font-semibold text-sm">
-                      <a
-                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Melanie & Alberto 🤵👰 Boda")}&dates=20261218T180000/20261218T223000&details=${encodeURIComponent("Estás cordialmente invitado a celebrar nuestra boda.\n\nRecuerda confirmar o declinar tu asistencia en la invitación digital:\n" + (typeof window !== 'undefined' ? window.location.href : ''))}&location=${encodeURIComponent('Salon de eventos "Gran Jardin", Adolfo López Mateos 203, Trojes de San Cristóbal')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 hover:bg-[#e8dcc4] transition flex items-center gap-2 cursor-pointer text-left text-[#4A3B2C]"
-                        onClick={() => setCalMenuAbierto(false)}
-                      >
-                        🌐 {t.googleCal}
-                      </a>
-                      <button
-                        onClick={() => {
-                          descargarIcal();
-                          setCalMenuAbierto(false);
-                        }}
-                        className="p-2 hover:bg-[#e8dcc4] transition flex items-center gap-2 w-full text-left bg-transparent border-none text-[#4A3B2C]"
-                      >
-                        🍏 {t.appleCal}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* Botón único de Google Calendar */}
+                <button
+                  onClick={irAGoogleCalendar}
+                  className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(31,64,39,1)] border border-[#1f4027] w-full sm:w-auto flex items-center justify-center gap-2"
+                >
+                  📅 {t.addCalBtn}
+                </button>
               </div>
             </div>
 
-            {/* 4. CONFIRMACIÓN DE ASISTENCIA (AHORA JUSTO ABAJO DE FECHA Y LUGAR) */}
+            {/* 5. CONFIRMACIÓN DE ASISTENCIA */}
             <div className="w-full bg-[#f4e8c1]/90 p-6 sm:p-8 border-2 border-[#8C6D46] shadow-[0_0_15px_rgba(0,0,0,0.1)] text-center relative z-10 backdrop-blur-sm">
               <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-4 drop-shadow-sm leading-tight" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 {t.rsvpTitle}
@@ -761,19 +729,9 @@ export default function InvitacionZelda() {
                   </>
                 )}
               </div>
-
-              {/* BOTÓN: COMPARTIR LA INVITACIÓN ORIGINAL POR WHATSAPP */}
-              <div className="mt-6 border-t border-[#8C6D46]/20 pt-4 flex justify-center">
-                <button
-                  onClick={compartirInvitacion}
-                  className="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold border border-green-600 hover:bg-[#20b855] transition flex items-center justify-center gap-2 text-sm shadow-md"
-                >
-                  📤 {t.shareBtn}
-                </button>
-              </div>
             </div>
 
-            {/* 5. MELODÍAS (MÁXIMO 3) */}
+            {/* 6. MELODÍAS (MÁXIMO 3) */}
             <div className="w-full bg-[#e8dcc4]/80 p-6 border border-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.2)] mb-8 backdrop-blur-sm text-center">
               <h3 className="text-3xl sm:text-4xl mb-2 text-[#8C6D46] drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>
                 {t.melodiesTitle}
@@ -819,7 +777,7 @@ export default function InvitacionZelda() {
                 </div>
               )}
 
-              {/* Formulario de búsqueda (Se bloquea al llegar a 3 canciones) */}
+              {/* Formulario de búsqueda */}
               {cancionesSugeridas.length >= 3 ? (
                 <div className="bg-[#2d5c38]/10 border border-[#2d5c38]/30 rounded-xl p-3 max-w-sm mx-auto">
                   <p className="text-xs font-bold text-[#1f4027]">
@@ -828,7 +786,6 @@ export default function InvitacionZelda() {
                 </div>
               ) : (
                 <div className="relative max-w-sm mx-auto flex flex-col gap-3">
-                  {/* Input de Búsqueda */}
                   <div className="relative w-full">
                     <input
                       type="text"
@@ -847,7 +804,6 @@ export default function InvitacionZelda() {
                     )}
                   </div>
 
-                  {/* Desplegable de resultados iTunes */}
                   {resultadosiTunes.length > 0 && !cancionSeleccionada && (
                     <div className="absolute top-12 left-0 right-0 z-30 bg-[#f8f5eb] border-2 border-[#8C6D46] rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-[#8C6D46]/20 text-left">
                       {resultadosiTunes.map((track) => (
@@ -895,7 +851,6 @@ export default function InvitacionZelda() {
                     </div>
                   )}
 
-                  {/* Tarjeta de Canción Seleccionada */}
                   {cancionSeleccionada && (
                     <div className="flex items-center gap-3 bg-[#f8f5eb] p-2.5 rounded-xl border border-[#c5a059] shadow-sm text-left">
                       <img
@@ -932,7 +887,6 @@ export default function InvitacionZelda() {
                     </div>
                   )}
 
-                  {/* Botón Enviar Canción */}
                   <button
                     onClick={enviarCancion}
                     disabled={enviandoCancion || !queryMusica.trim() || cancionesSugeridas.length >= 3}
@@ -946,44 +900,6 @@ export default function InvitacionZelda() {
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* 6. NOSOTROS (CARRUSEL) */}
-            <div className="w-full flex flex-col items-center pt-2">
-              <h2 className="text-4xl sm:text-5xl text-[#1f4027] mb-6 drop-shadow-sm" style={{ fontFamily: "'Zelda', sans-serif" }}>{t.us}</h2>
-              
-              <div className="relative w-64 h-80 sm:w-72 sm:h-96 group">
-                <div className="absolute inset-0 bg-[#f8f5eb] p-3 sm:p-4 shadow-[0_15px_35px_rgba(0,0,0,0.4)] border border-[#d2bfa1] transform -rotate-2 transition-transform duration-500 hover:rotate-0">
-                  <div className="w-full h-full border-2 border-[#8C6D46] relative overflow-hidden bg-gray-200">
-                    <img src={fotos[fotoIndex]} alt={`Momento ${fotoIndex + 1}`} className="w-full h-full object-cover transition-opacity duration-500" />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={fotoAnterior}
-                  aria-label="Anterior"
-                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-                  className="absolute -left-7 sm:-left-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
-                >
-                  &#10094;
-                </button>
-                <button
-                  type="button"
-                  onClick={siguienteFoto}
-                  aria-label="Siguiente"
-                  style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-                  className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] hover:scale-125 transition-transform z-20 text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-1"
-                >
-                  &#10095;
-                </button>
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                {fotos.map((_, i) => (
-                  <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i === fotoIndex ? 'bg-[#4A3B2C]' : 'bg-[#8C6D46]/40'}`} />
-                ))}
-              </div>
             </div>
 
             <hr className="border-[#8C6D46] border-t-2 w-1/2 opacity-50 my-1" />
