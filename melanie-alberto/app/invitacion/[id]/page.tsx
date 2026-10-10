@@ -37,7 +37,7 @@ const i18n = {
     hall: "Salon de eventos \"Gran Jardin\"",
     address: "Adolfo López Mateos 203, Trojes de San Cristóbal",
     mapBtn: "Ver en el Mapa",
-    addCalBtn: "Añadir a Google Calendar",
+    addCalBtn: "Añadir a Calendario",
     gifts: "Mesa de Regalos",
     giftsText: "El regalo más grande es que nos acompañes en este día, pero si deseas tener un detalle con nosotros, te compartimos nuestras mesas de regalos oficiales. ¡Gracias por tu cariño y apoyo!:",
     dress: "Código de Vestimenta",
@@ -641,7 +641,7 @@ export default function InvitacionZelda() {
                   onClick={irAGoogleCalendar}
                   className="bg-[#8C6D46] text-[#f4e8c1] px-6 py-3 font-bold text-lg uppercase tracking-wider hover:bg-[#6b5233] transition shadow-[4px_4px_0px_0px_rgba(31,64,39,1)] border border-[#1f4027] w-full sm:w-auto flex items-center justify-center gap-2"
                 >
-                  📅 {t.addCalBtn}
+                   {t.addCalBtn}
                 </button>
               </div>
             </div>

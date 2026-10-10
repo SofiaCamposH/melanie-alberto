@@ -11,6 +11,7 @@ interface Invitado {
   boletos_asignados: number;
   boletos_aceptados?: number | null;
   creado_en?: string;
+  creado_por?: string | null; // <-- Se agregó para registrar al creador de la invitación
 }
 
 interface Cancion {
@@ -241,6 +242,7 @@ export default function DashboardClient() {
             boletos_asignados: Number(nuevosBoletos) || 1,
             estado: 'pendiente',
             boletos_aceptados: null,
+            creado_por: session?.user?.email || 'Admin', // <-- Se guarda quién lo creó
           },
         ]);
         if (error) throw error;
@@ -304,9 +306,12 @@ export default function DashboardClient() {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
+  // ================= MENSAJE DE WHATSAPP (LÍNEA 354 APROX) =================
   const enviarWhatsApp = (inv: Invitado) => {
     const urlInvitacion = `${window.location.origin}/invitacion/${inv.id}`;
-    const texto = `¡Hola ${inv.nombre}! Nos encantaría que nos acompañes en este día tan especial. Te compartimos tu invitación formal con todos los detalles y el pase digital para ti y tu familia: ${urlInvitacion}`;
+    
+    // Mensaje natural y con formato impecable, limitando emojis para no saturar
+    const texto = `¡Hola ${inv.nombre}! Nos hace mucha ilusión invitarte a nuestra boda. Te compartimos nuestra invitación digital personalizada con todos los detalles del evento y tus pases en este enlace: ${urlInvitacion}\n\nPor favor, ingresa al enlace para confirmar o declinar tu asistencia en la sección de confirmación (RSVP) dentro de la misma página. ¡Esperamos contar contigo! 💍`;
 
     const telLimpio = inv.telefono ? inv.telefono.replace(/\D/g, '') : '';
     const enlaceWA = telLimpio
@@ -359,6 +364,7 @@ export default function DashboardClient() {
               telefono,
               estado: 'pendiente',
               boletos_aceptados: null,
+              creado_por: session?.user?.email || 'Admin', // <-- Se registra al creador desde CSV
             });
           }
         }
@@ -594,7 +600,7 @@ export default function DashboardClient() {
               </div>
             </div>
 
-            {/* Tabla de Invitados */}
+            {/* Tabla de Invitados (CON COLUMNA "CREADO POR") */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -602,6 +608,7 @@ export default function DashboardClient() {
                     <tr>
                       <th className="py-3.5 px-4">Invitado / Familia</th>
                       <th className="py-3.5 px-4">Boletos Asignados</th>
+                      <th className="py-3.5 px-4">Creado Por</th> {/* <-- Nueva Columna */}
                       <th className="py-3.5 px-4">Estado</th>
                       <th className="py-3.5 px-4">Pases Aceptados</th>
                       <th className="py-3.5 px-4 text-right">Acciones</th>
@@ -610,13 +617,13 @@ export default function DashboardClient() {
                   <tbody className="divide-y divide-slate-100">
                     {loadingInvitados ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-slate-400">
+                        <td colSpan={6} className="py-8 text-center text-slate-400">
                           Cargando invitados...
                         </td>
                       </tr>
                     ) : invitadosFiltrados.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-slate-400">
+                        <td colSpan={6} className="py-8 text-center text-slate-400">
                           No se encontraron invitados con los criterios actuales.
                         </td>
                       </tr>
@@ -638,6 +645,10 @@ export default function DashboardClient() {
                             </td>
                             <td className="py-3.5 px-4 text-slate-600">
                               {boletosAsignados} {boletosAsignados === 1 ? 'boleto' : 'boletos'}
+                            </td>
+                            {/* Mostrar quién creó la invitación */}
+                            <td className="py-3.5 px-4 text-slate-500 font-medium text-xs">
+                              {inv.creado_por || 'Sistema / Inicial'}
                             </td>
                             <td className="py-3.5 px-4">
                               {est === 'confirmado' && (
