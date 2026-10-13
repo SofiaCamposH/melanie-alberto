@@ -49,9 +49,14 @@ export default function DashboardClient() {
   const [loadingInvitados, setLoadingInvitados] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'confirmados' | 'pendientes' | 'declinados'>('todos');
+  const [filtroCreador, setFiltroCreador] = useState<string>('todos'); // NUEVO: Filtro por creador
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [cargandoCSV, setCargandoCSV] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados de Ordenamiento (Sorting)
+  const [ordenCol, setOrdenCol] = useState<'nombre' | 'boletos' | 'creador' | 'estado'>('nombre');
+  const [ordenDir, setOrdenDir] = useState<'asc' | 'desc'>('asc');
 
   // Estados de Canciones
   const [canciones, setCanciones] = useState<Cancion[]>([]);
@@ -154,8 +159,7 @@ export default function DashboardClient() {
     try {
       const { data, error } = await supabase
         .from('invitados')
-        .select('*')
-        .order('nombre', { ascending: true });
+        .select('*'); // Quitamos el order de SQL para manejarlo con React dinámicamente
 
       if (error) throw error;
       setInvitados(data || []);
@@ -334,7 +338,6 @@ export default function DashboardClient() {
     }
   };
 
-  // Abrir Modal de nueva canción
   const abrirModalNuevaCancion = () => {
     setQueryMusica('');
     setCancionSeleccionada(null);
@@ -342,7 +345,6 @@ export default function DashboardClient() {
     setModalCancionAbierto(true);
   };
 
-  // Guardar Canción seleccionada vía API asignándola a la Sesión (Ilimitado)
   const handleGuardarCancion = async () => {
     if (!queryMusica.trim()) return alert('Busca o escribe una canción primero.');
     
@@ -355,8 +357,8 @@ export default function DashboardClient() {
         {
           titulo: tituloAEnviar,
           artista: artistaAEnviar,
-          invitado_id: null, // Queda nulo porque no pertenece a un invitado externo
-          creado_por: session?.user?.email || 'Administrador', // Lo asignamos automáticamente a la sesión
+          invitado_id: null, 
+          creado_por: session?.user?.email || 'Administrador', 
         }
       ]);
 
@@ -379,6 +381,7 @@ export default function DashboardClient() {
 
   const getEstado = (inv: Invitado) => (inv.estado || 'pendiente').toLowerCase().trim();
 
+  // Métricas
   const totalInvitaciones = invitados.length;
   const totalBoletos = invitados.reduce((acc, curr) => acc + (Number(curr.boletos_asignados) || 0), 0);
 
@@ -395,17 +398,60 @@ export default function DashboardClient() {
     return acc + aceptados;
   }, 0);
 
-  const invitadosFiltrados = invitados.filter((inv) => {
-    const coincideNombre = inv.nombre?.toLowerCase().includes(busqueda.toLowerCase());
-    if (!coincideNombre) return false;
+  // Lista de creadores únicos para el select
+  const creadoresUnicos = Array.from(new Set(invitados.map(inv => inv.creado_por || 'Sistema / Inicial')));
 
-    const est = getEstado(inv);
-    if (filtroEstado === 'confirmados') return est === 'confirmado';
-    if (filtroEstado === 'declinados') return est === 'declinado' || est === 'cancelado' || est === 'rechazado' || est === 'no';
-    if (filtroEstado === 'pendientes') return est === 'pendiente';
+  // Función para manejar el clic en encabezados (Sorting)
+  const cambiarOrden = (columna: 'nombre' | 'boletos' | 'creador' | 'estado') => {
+    if (ordenCol === columna) {
+      setOrdenDir(ordenDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrdenCol(columna);
+      setOrdenDir('asc');
+    }
+  };
 
-    return true;
-  });
+  // Filtrado y Ordenamiento
+  const invitadosFiltradosYOrdenados = invitados
+    .filter((inv) => {
+      // 1. Filtro de búsqueda
+      const coincideNombre = inv.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+      if (!coincideNombre) return false;
+
+      // 2. Filtro de estado
+      const est = getEstado(inv);
+      if (filtroEstado === 'confirmados' && est !== 'confirmado') return false;
+      if (filtroEstado === 'declinados' && !['declinado', 'cancelado', 'rechazado', 'no'].includes(est)) return false;
+      if (filtroEstado === 'pendientes' && est !== 'pendiente') return false;
+
+      // 3. Filtro de creador
+      const creador = inv.creado_por || 'Sistema / Inicial';
+      if (filtroCreador !== 'todos' && creador !== filtroCreador) return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      let valA: string | number = '';
+      let valB: string | number = '';
+
+      if (ordenCol === 'nombre') {
+        valA = a.nombre.toLowerCase();
+        valB = b.nombre.toLowerCase();
+      } else if (ordenCol === 'boletos') {
+        valA = a.boletos_asignados;
+        valB = b.boletos_asignados;
+      } else if (ordenCol === 'creador') {
+        valA = (a.creado_por || 'Sistema / Inicial').toLowerCase();
+        valB = (b.creado_por || 'Sistema / Inicial').toLowerCase();
+      } else if (ordenCol === 'estado') {
+        valA = getEstado(a);
+        valB = getEstado(b);
+      }
+
+      if (valA < valB) return ordenDir === 'asc' ? -1 : 1;
+      if (valA > valB) return ordenDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const cancionesFiltradas = canciones.filter((c) => {
     const term = busquedaCancion.toLowerCase();
@@ -688,7 +734,7 @@ export default function DashboardClient() {
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-              <div className="w-full md:w-80">
+              <div className="w-full md:w-80 flex gap-2">
                 <input
                   type="text"
                   placeholder="🔍 Buscar por nombre..."
@@ -698,20 +744,37 @@ export default function DashboardClient() {
                 />
               </div>
 
-              <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                {(['todos', 'confirmados', 'pendientes', 'declinados'] as const).map((filtro) => (
-                  <button
-                    key={filtro}
-                    onClick={() => setFiltroEstado(filtro)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
-                      filtroEstado === filtro
-                        ? 'bg-[#1f4027] text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+              <div className="flex gap-4 w-full md:w-auto items-center flex-wrap">
+                {/* NUEVO: Filtro por Creador */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Creador:</label>
+                  <select
+                    value={filtroCreador}
+                    onChange={(e) => setFiltroCreador(e.target.value)}
+                    className="px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#1f4027] cursor-pointer"
                   >
-                    {filtro}
-                  </button>
-                ))}
+                    <option value="todos">Todos</option>
+                    {creadoresUnicos.map((creador, idx) => (
+                      <option key={idx} value={creador}>{creador}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+                  {(['todos', 'confirmados', 'pendientes', 'declinados'] as const).map((filtro) => (
+                    <button
+                      key={filtro}
+                      onClick={() => setFiltroEstado(filtro)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+                        filtroEstado === filtro
+                          ? 'bg-[#1f4027] text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {filtro}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -720,10 +783,19 @@ export default function DashboardClient() {
                 <table className="w-full text-left text-sm animate-fade-in">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <tr>
-                      <th className="py-3.5 px-4">Invitado / Familia</th>
-                      <th className="py-3.5 px-4">Boletos Asignados</th>
-                      <th className="py-3.5 px-4">Creado Por</th>
-                      <th className="py-3.5 px-4">Estado</th>
+                      {/* Encabezados Clickables para Ordenar */}
+                      <th onClick={() => cambiarOrden('nombre')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition select-none">
+                        Invitado / Familia {ordenCol === 'nombre' && (ordenDir === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th onClick={() => cambiarOrden('boletos')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition select-none">
+                        Boletos Asignados {ordenCol === 'boletos' && (ordenDir === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th onClick={() => cambiarOrden('creador')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition select-none">
+                        Creado Por {ordenCol === 'creador' && (ordenDir === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th onClick={() => cambiarOrden('estado')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition select-none">
+                        Estado {ordenCol === 'estado' && (ordenDir === 'asc' ? '↑' : '↓')}
+                      </th>
                       <th className="py-3.5 px-4">Pases Aceptados</th>
                       <th className="py-3.5 px-4 text-right">Acciones</th>
                     </tr>
@@ -735,14 +807,14 @@ export default function DashboardClient() {
                           Cargando invitados...
                         </td>
                       </tr>
-                    ) : invitadosFiltrados.length === 0 ? (
+                    ) : invitadosFiltradosYOrdenados.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-slate-400">
                           No se encontraron invitados con los criterios actuales.
                         </td>
                       </tr>
                     ) : (
-                      invitadosFiltrados.map((inv) => {
+                      invitadosFiltradosYOrdenados.map((inv) => {
                         const est = getEstado(inv);
                         const boletosAsignados = Number(inv.boletos_asignados || 0);
                         const boletosAceptados = inv.boletos_aceptados;
@@ -1109,7 +1181,7 @@ export default function DashboardClient() {
                   <button
                     type="button"
                     onClick={() => togglePreview(cancionSeleccionada.previewUrl)}
-                    className="w-8 h-8 rounded-full bg-[#1f4027] text-white flex items-center justify-center hover:bg-[#16301d] transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
+                    className="w-8 h-8 rounded-full bg-[#1f4027] text-white flex items-center justify-center hover:bg-[#1f4027]/90 transition flex-shrink-0 border-none outline-none focus:outline-none focus:ring-0 active:scale-95"
                   >
                     {previewSonando ? (
                       <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
